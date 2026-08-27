@@ -13,7 +13,7 @@ Inspect, triage, search, filter, and suppress security findings in your browser 
 [![Docker Rootless](https://img.shields.io/badge/Docker-Rootless_8080-2496ed?logo=docker&logoColor=white)](Dockerfile)
 [![Shift-Left Privacy](https://img.shields.io/badge/Privacy-100%25_In--Browser-10b981?logo=shield&logoColor=white)](#-privacy--security-first)
 
-[Live Demo](#) • [Features](#-key-features) • [Quick Start](#-quick-start) • [Docker](#-docker-deployment) • [Contributing](CONTRIBUTING.md)
+[Live Demo](https://angelcamposm.github.io/sarif-viewer/) • [Features](#-key-features) • [Quick Start](#-quick-start) • [Docker](#-docker-deployment) • [Contributing](CONTRIBUTING.md)
 
 </div>
 
