@@ -1,0 +1,385 @@
+import React, { useState, useMemo } from 'react';
+import { NormalizedFinding, SarifLevel } from '../types/viewer';
+import { SeverityBadge } from './ui/Badge';
+import {
+  BellOff,
+  Bell,
+  CheckCircle2,
+  FileText,
+  Code2,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
+} from 'lucide-react';
+
+type SortField = 'rule' | 'level' | 'message' | 'file';
+type SortDirection = 'asc' | 'desc';
+
+interface FindingsTableProps {
+  findings: NormalizedFinding[];
+  selectedFindingId: string | null;
+  onSelectFinding: (finding: NormalizedFinding) => void;
+  onToggleMute: (finding: NormalizedFinding) => void;
+  onViewRawSarif?: (finding: NormalizedFinding) => void;
+}
+
+const SEVERITY_WEIGHT: Record<SarifLevel, number> = {
+  error: 4,
+  warning: 3,
+  note: 2,
+  none: 1,
+};
+
+export const FindingsTable: React.FC<FindingsTableProps> = ({
+  findings,
+  selectedFindingId,
+  onSelectFinding,
+  onToggleMute,
+  onViewRawSarif,
+}) => {
+  // Sorting state
+  const [sortField, setSortField] = useState<SortField | null>(null);
+  const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [pageSize, setPageSize] = useState<number>(25);
+
+  // Adjust current page during render if findings count changed
+  const [prevFindingsLength, setPrevFindingsLength] = useState(findings.length);
+  if (findings.length !== prevFindingsLength) {
+    setPrevFindingsLength(findings.length);
+    setCurrentPage(1);
+  }
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      if (sortDirection === 'asc') {
+        setSortDirection('desc');
+      } else {
+        // Reset sort
+        setSortField(null);
+        setSortDirection('asc');
+      }
+    } else {
+      setSortField(field);
+      // Default to desc for severity level (highest first), asc for text fields
+      setSortDirection(field === 'level' ? 'desc' : 'asc');
+    }
+    setCurrentPage(1);
+  };
+
+  // 1. Sort findings
+  const sortedFindings = useMemo(() => {
+    if (!sortField) return findings;
+
+    return [...findings].sort((a, b) => {
+      let comparison = 0;
+
+      switch (sortField) {
+        case 'rule':
+          comparison = a.ruleId.localeCompare(b.ruleId);
+          break;
+        case 'level': {
+          const weightA = SEVERITY_WEIGHT[a.effectiveLevel] || 0;
+          const weightB = SEVERITY_WEIGHT[b.effectiveLevel] || 0;
+          comparison = weightA - weightB;
+          break;
+        }
+        case 'message':
+          comparison = a.message.localeCompare(b.message);
+          break;
+        case 'file':
+          comparison = (a.filePath || '').localeCompare(b.filePath || '');
+          break;
+        default:
+          comparison = 0;
+      }
+
+      return sortDirection === 'asc' ? comparison : -comparison;
+    });
+  }, [findings, sortField, sortDirection]);
+
+  // 2. Paginate sorted findings
+  const totalItems = sortedFindings.length;
+  const isAll = pageSize === -1;
+  const totalPages = isAll ? 1 : Math.max(1, Math.ceil(totalItems / pageSize));
+  
+  // Guard current page in range
+  const safeCurrentPage = Math.min(currentPage, totalPages);
+
+  const paginatedFindings = useMemo(() => {
+    if (isAll) return sortedFindings;
+    const startIndex = (safeCurrentPage - 1) * pageSize;
+    return sortedFindings.slice(startIndex, startIndex + pageSize);
+  }, [sortedFindings, safeCurrentPage, pageSize, isAll]);
+
+  const startIndex = isAll ? 0 : (safeCurrentPage - 1) * pageSize;
+  const endIndex = isAll ? totalItems : Math.min(startIndex + pageSize, totalItems);
+
+  if (findings.length === 0) {
+    return (
+      <div className="bg-white dark:bg-zinc-900 rounded-xl border border-slate-200 dark:border-zinc-800 p-12 text-center shadow-2xs">
+        <div className="mx-auto w-12 h-12 rounded-full bg-slate-100 dark:bg-zinc-800 flex items-center justify-center text-slate-400 dark:text-zinc-500 mb-3">
+          <CheckCircle2 className="w-6 h-6" />
+        </div>
+        <h3 className="text-sm font-semibold text-slate-800 dark:text-zinc-200">No findings matched your criteria</h3>
+        <p className="text-xs text-slate-500 dark:text-zinc-400 mt-1 max-w-sm mx-auto">
+          Try clearing some filters or searching with different keywords.
+        </p>
+      </div>
+    );
+  }
+
+  const renderSortIcon = (field: SortField) => {
+    if (sortField !== field) {
+      return <ArrowUpDown className="w-3.5 h-3.5 text-slate-400 dark:text-zinc-500 opacity-0 group-hover/th:opacity-100 transition-opacity" />;
+    }
+    return sortDirection === 'asc' ? (
+      <ArrowUp className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 font-bold" />
+    ) : (
+      <ArrowDown className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 font-bold" />
+    );
+  };
+
+  return (
+    <div className="bg-white dark:bg-zinc-900 rounded-xl border border-slate-200 dark:border-zinc-800 shadow-2xs overflow-hidden flex flex-col transition-colors duration-200">
+      {/* Table Content */}
+      <div className="overflow-x-auto">
+        <table className="w-full text-left text-xs border-collapse">
+          <thead>
+            <tr className="border-b border-slate-200 dark:border-zinc-800 bg-slate-50/80 dark:bg-zinc-950/80 text-slate-600 dark:text-zinc-400 font-semibold uppercase tracking-wider text-[11px] select-none">
+              {/* Rule Column */}
+              <th
+                onClick={() => handleSort('rule')}
+                className="py-3 px-4 w-32 cursor-pointer hover:bg-slate-100/80 dark:hover:bg-zinc-800/80 transition-colors group/th"
+                title="Click to sort by Rule ID"
+              >
+                <div className="flex items-center justify-between gap-1">
+                  <span>Rule</span>
+                  {renderSortIcon('rule')}
+                </div>
+              </th>
+
+              {/* Level Column */}
+              <th
+                onClick={() => handleSort('level')}
+                className="py-3 px-3 w-32 cursor-pointer hover:bg-slate-100/80 dark:hover:bg-zinc-800/80 transition-colors group/th"
+                title="Click to sort by Severity Level"
+              >
+                <div className="flex items-center justify-between gap-1">
+                  <span>Level</span>
+                  {renderSortIcon('level')}
+                </div>
+              </th>
+
+              {/* Message Column */}
+              <th
+                onClick={() => handleSort('message')}
+                className="py-3 px-4 max-w-[500px] cursor-pointer hover:bg-slate-100/80 dark:hover:bg-zinc-800/80 transition-colors group/th"
+                title="Click to sort by Message"
+              >
+                <div className="flex items-center justify-between gap-1">
+                  <span>Message</span>
+                  {renderSortIcon('message')}
+                </div>
+              </th>
+
+              {/* File Column */}
+              <th
+                onClick={() => handleSort('file')}
+                className="py-3 px-4 min-w-[180px] cursor-pointer hover:bg-slate-100/80 dark:hover:bg-zinc-800/80 transition-colors group/th"
+                title="Click to sort by File Path"
+              >
+                <div className="flex items-center justify-between gap-1">
+                  <span>File</span>
+                  {renderSortIcon('file')}
+                </div>
+              </th>
+
+              {/* Actions Column */}
+              <th className="py-3 px-3 w-20 text-center">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100 dark:divide-zinc-800">
+            {paginatedFindings.map((f) => {
+              const isSelected = selectedFindingId === f.id;
+              return (
+                <tr
+                  key={f.id}
+                  onClick={() => onSelectFinding(f)}
+                  className={`cursor-pointer transition-colors group ${
+                    isSelected
+                      ? 'bg-blue-50/90 hover:bg-blue-50 dark:bg-zinc-800/90 dark:hover:bg-zinc-800 font-medium text-slate-900 dark:text-zinc-100 ring-1 ring-blue-200 dark:ring-zinc-600 inset-0'
+                      : f.isMuted
+                      ? 'bg-slate-50/50 dark:bg-zinc-950/40 hover:bg-slate-100/70 dark:hover:bg-zinc-800/60 text-slate-400 dark:text-zinc-500 opacity-75'
+                      : 'hover:bg-slate-50/80 dark:hover:bg-zinc-800/60 text-slate-700 dark:text-zinc-300'
+                  }`}
+                >
+                  {/* Rule ID */}
+                  <td className="py-3 px-4 whitespace-nowrap align-middle font-mono font-semibold text-slate-900 dark:text-zinc-100">
+                    <span className="hover:underline">{f.ruleId}</span>
+                  </td>
+
+                  {/* Level Badge */}
+                  <td className="py-3 px-3 whitespace-nowrap align-middle">
+                    <div className="flex items-center gap-1">
+                      <SeverityBadge
+                        level={f.effectiveLevel}
+                        isOverridden={f.isLevelOverridden}
+                        overrideTag={f.overrideTag}
+                      />
+                    </div>
+                  </td>
+
+                  {/* Message (max-w-[500px] with multiline support) */}
+                  <td className="py-3 px-4 align-middle max-w-[500px]">
+                    <div className="leading-relaxed break-words whitespace-normal">
+                      {f.isMuted && (
+                        <span className="inline-flex items-center gap-0.5 mr-1.5 text-[10px] uppercase font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/60 px-1 py-0.2 rounded border border-amber-200 dark:border-amber-800">
+                          [MUTED]
+                        </span>
+                      )}
+                      <span className={f.isMuted ? 'line-through text-slate-400 dark:text-zinc-500' : 'text-slate-800 dark:text-zinc-200'}>
+                        {f.message}
+                      </span>
+                    </div>
+                  </td>
+
+                  {/* File (with file icon) */}
+                  <td className="py-3 px-4 align-middle" title={f.filePath}>
+                    <div className="flex items-center gap-1.5 max-w-[240px]">
+                      <FileText className="w-3.5 h-3.5 text-slate-400 dark:text-zinc-500 shrink-0" />
+                      <span className="font-mono text-[11px] text-slate-600 dark:text-zinc-400 truncate">
+                        {f.filePath || 'Not provided'}
+                      </span>
+                    </div>
+                  </td>
+
+                  {/* Action Buttons: View Raw SARIF + Quick Mute */}
+                  <td className="py-3 px-3 align-middle text-center" onClick={(e) => e.stopPropagation()}>
+                    <div className="flex items-center justify-center gap-1">
+                      {onViewRawSarif && (
+                        <button
+                          type="button"
+                          onClick={() => onViewRawSarif(f)}
+                          className="p-1.5 rounded-md text-slate-400 hover:text-slate-800 dark:text-zinc-500 dark:hover:text-zinc-200 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100 cursor-pointer"
+                          title="View Raw SARIF JSON"
+                        >
+                          <Code2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+
+                      <button
+                        type="button"
+                        onClick={() => onToggleMute(f)}
+                        className={`p-1.5 rounded-md transition-colors cursor-pointer ${
+                          f.isMuted
+                            ? 'text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/50 hover:bg-amber-100 dark:hover:bg-amber-900/50 border border-amber-200 dark:border-amber-800'
+                            : 'text-slate-400 dark:text-zinc-500 hover:text-slate-700 dark:hover:text-zinc-200 hover:bg-slate-100 dark:hover:bg-zinc-800 opacity-0 group-hover:opacity-100 focus:opacity-100'
+                        }`}
+                        title={f.isMuted ? `Muted: ${f.muteRecord?.reason || 'Suppressed'}. Click to unmute.` : 'Mute this finding'}
+                      >
+                        {f.isMuted ? <BellOff className="w-3.5 h-3.5" /> : <Bell className="w-3.5 h-3.5" />}
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Table Pagination & Range Footer */}
+      <div className="p-3 sm:px-4 bg-slate-50/75 dark:bg-zinc-950/80 border-t border-slate-200 dark:border-zinc-800 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-600 dark:text-zinc-400">
+        {/* Left: Range and Count Indicator */}
+        <div className="text-slate-500 dark:text-zinc-400">
+          Showing <span className="font-semibold text-slate-800 dark:text-zinc-200">{totalItems > 0 ? startIndex + 1 : 0}</span> to{' '}
+          <span className="font-semibold text-slate-800 dark:text-zinc-200">{endIndex}</span> of{' '}
+          <span className="font-semibold text-slate-800 dark:text-zinc-200">{totalItems}</span> findings
+          {sortField && (
+            <span className="ml-2 text-slate-400 dark:text-zinc-500 text-[11px]">
+              (Sorted by <strong className="text-slate-600 dark:text-zinc-300 capitalize">{sortField}</strong> {sortDirection === 'asc' ? '↑' : '↓'})
+            </span>
+          )}
+        </div>
+
+        {/* Center / Right: Page Size Selector & Navigation Buttons */}
+        <div className="flex items-center gap-3">
+          {/* Page Size Dropdown */}
+          <div className="flex items-center gap-1.5">
+            <span className="text-[11px] text-slate-500 dark:text-zinc-400">Per page:</span>
+            <select
+              value={pageSize}
+              onChange={(e) => {
+                setPageSize(Number(e.target.value));
+                setCurrentPage(1);
+              }}
+              className="py-1 px-2 text-xs bg-white dark:bg-zinc-800 text-slate-800 dark:text-zinc-200 border border-slate-300 dark:border-zinc-700 rounded-md shadow-2xs focus:outline-hidden focus:ring-1 focus:ring-blue-500 cursor-pointer font-medium"
+            >
+              <option value={10}>10</option>
+              <option value={25}>25</option>
+              <option value={50}>50</option>
+              <option value={100}>100</option>
+              <option value={-1}>All</option>
+            </select>
+          </div>
+
+          {/* Page Navigation Controls (if not 'All') */}
+          {!isAll && totalPages > 1 && (
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => setCurrentPage(1)}
+                disabled={safeCurrentPage <= 1}
+                className="p-1 rounded bg-white dark:bg-zinc-800 border border-slate-300 dark:border-zinc-700 hover:bg-slate-100 dark:hover:bg-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed shadow-2xs transition-colors cursor-pointer text-slate-700 dark:text-zinc-300"
+                title="First page"
+              >
+                <ChevronsLeft className="w-3.5 h-3.5" />
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                disabled={safeCurrentPage <= 1}
+                className="p-1 rounded bg-white dark:bg-zinc-800 border border-slate-300 dark:border-zinc-700 hover:bg-slate-100 dark:hover:bg-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed shadow-2xs transition-colors cursor-pointer text-slate-700 dark:text-zinc-300"
+                title="Previous page"
+              >
+                <ChevronLeft className="w-3.5 h-3.5" />
+              </button>
+
+              <span className="px-2 py-0.5 text-xs font-medium text-slate-700 dark:text-zinc-300">
+                Page {safeCurrentPage} of {totalPages}
+              </span>
+
+              <button
+                type="button"
+                onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+                disabled={safeCurrentPage >= totalPages}
+                className="p-1 rounded bg-white dark:bg-zinc-800 border border-slate-300 dark:border-zinc-700 hover:bg-slate-100 dark:hover:bg-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed shadow-2xs transition-colors cursor-pointer text-slate-700 dark:text-zinc-300"
+                title="Next page"
+              >
+                <ChevronRight className="w-3.5 h-3.5" />
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setCurrentPage(totalPages)}
+                disabled={safeCurrentPage >= totalPages}
+                className="p-1 rounded bg-white dark:bg-zinc-800 border border-slate-300 dark:border-zinc-700 hover:bg-slate-100 dark:hover:bg-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed shadow-2xs transition-colors cursor-pointer text-slate-700 dark:text-zinc-300"
+                title="Last page"
+              >
+                <ChevronsRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
