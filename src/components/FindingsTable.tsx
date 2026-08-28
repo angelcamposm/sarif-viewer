@@ -49,10 +49,10 @@ export const FindingsTable: React.FC<FindingsTableProps> = ({
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [pageSize, setPageSize] = useState<number>(25);
 
-  // Adjust current page during render if findings count changed
-  const [prevFindingsLength, setPrevFindingsLength] = useState(findings.length);
-  if (findings.length !== prevFindingsLength) {
-    setPrevFindingsLength(findings.length);
+  // Reset pagination whenever findings array reference changes
+  const [prevFindings, setPrevFindings] = useState(findings);
+  if (findings !== prevFindings) {
+    setPrevFindings(findings);
     setCurrentPage(1);
   }
 
@@ -110,7 +110,7 @@ export const FindingsTable: React.FC<FindingsTableProps> = ({
   const totalPages = isAll ? 1 : Math.max(1, Math.ceil(totalItems / pageSize));
   
   // Guard current page in range
-  const safeCurrentPage = Math.min(currentPage, totalPages);
+  const safeCurrentPage = Math.min(Math.max(1, currentPage), totalPages);
 
   const paginatedFindings = useMemo(() => {
     if (isAll) return sortedFindings;

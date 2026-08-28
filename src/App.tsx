@@ -1,18 +1,25 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { SarifLog } from './types/sarif';
+import {
+  NormalizedFinding,
+  MuteRecord,
+  FilterState,
+} from './types/viewer';
+import { parseSarifJson } from './services/sarifParser';
+import { muteStorage } from './services/muteStorage';
+import { SAMPLE_REPORTS } from './data/sampleReports';
+
+// Components
 import { Header } from './components/Header';
-import { EmptyState } from './components/EmptyState';
 import { MetricsBar } from './components/MetricsBar';
 import { FilterBar, LevelOption } from './components/FilterBar';
 import { FindingsTable } from './components/FindingsTable';
 import { DetailsPanel } from './components/DetailsPanel';
-import { Footer } from './components/Footer';
+import { EmptyState } from './components/EmptyState';
 import { MuteModal } from './components/MuteModal';
 import { MuteManagerDialog } from './components/MuteManagerDialog';
 import { RawSarifModal } from './components/RawSarifModal';
-import { parseSarifJson } from './services/sarifParser';
-import { muteStorage } from './services/muteStorage';
-import { NormalizedFinding, FilterState, MuteRecord } from './types/viewer';
-import { SarifLog } from './types/sarif';
+import { Footer } from './components/Footer';
 
 const initialFilters: FilterState = {
   searchQuery: '',
@@ -22,29 +29,20 @@ const initialFilters: FilterState = {
   muteStatus: 'all',
 };
 
-export function App() {
-  const [rawSarif, setRawSarif] = useState<{ content: string; filename: string } | null>(null);
-  const [selectedFindingId, setSelectedFindingId] = useState<string | null>(null);
-  const [filters, setFilters] = useState<FilterState>(initialFilters);
-  const [mutedRecords, setMutedRecords] = useState<Record<string, MuteRecord>>(() => muteStorage.getAll());
-  
-  // Theme state: 'light' | 'dark'
+export const App: React.FC = () => {
+  // Theme State: 'light' | 'dark'
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
-    const saved = localStorage.getItem('sarif_viewer_theme');
-    if (saved === 'light' || saved === 'dark') return saved;
-    if (typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-      return 'dark';
+    if (typeof window !== 'undefined') {
+      const savedTheme = localStorage.getItem('sarif_viewer_theme') as 'light' | 'dark' | null;
+      if (savedTheme === 'light' || savedTheme === 'dark') return savedTheme;
+      if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        return 'dark';
+      }
     }
     return 'light';
   });
 
-  // Modals state
-  const [modalFinding, setModalFinding] = useState<NormalizedFinding | null>(null);
-  const [isMuteModalOpen, setIsMuteModalOpen] = useState(false);
-  const [isMuteManagerOpen, setIsMuteManagerOpen] = useState(false);
-  const [rawSarifModalFinding, setRawSarifModalFinding] = useState<NormalizedFinding | null>(null);
-
-  // Sync theme to document.documentElement
+  // Apply dark class to <html> root element
   useEffect(() => {
     if (theme === 'dark') {
       document.documentElement.classList.add('dark');
@@ -57,6 +55,36 @@ export function App() {
   const handleToggleTheme = () => {
     setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
   };
+
+  // Raw file state
+  const [rawSarif, setRawSarif] = useState<{ content: string; filename: string } | null>(() => {
+    const defaultSample = SAMPLE_REPORTS[0];
+    if (defaultSample) {
+      return {
+        content: JSON.stringify(defaultSample.data, null, 2),
+        filename: defaultSample.filename,
+      };
+    }
+    return null;
+  });
+
+  // Report instance counter for clean unmounting/remounting of tables and panels
+  const [reportInstanceId, setReportInstanceId] = useState(0);
+
+  // Muted records state directly mirrored from storage
+  const [mutedRecords, setMutedRecords] = useState<Record<string, MuteRecord>>(() =>
+    muteStorage.getAll()
+  );
+
+  // UI state
+  const [filters, setFilters] = useState<FilterState>(initialFilters);
+  const [selectedFindingId, setSelectedFindingId] = useState<string | null>(null);
+
+  // Modals state
+  const [isMuteModalOpen, setIsMuteModalOpen] = useState(false);
+  const [modalFinding, setModalFinding] = useState<NormalizedFinding | null>(null);
+  const [isMuteManagerOpen, setIsMuteManagerOpen] = useState(false);
+  const [rawSarifModalFinding, setRawSarifModalFinding] = useState<NormalizedFinding | null>(null);
 
   // Subscribe to mute storage changes
   useEffect(() => {
@@ -108,7 +136,7 @@ export function App() {
     return [...baseOptions, ...overrideOptions];
   }, [report]);
 
-  // Handle file loading
+  // Handle file loading - complete wipe and reset
   const handleFileLoaded = (fileContent: string, fileName: string) => {
     try {
       const parsedJson = JSON.parse(fileContent);
@@ -116,21 +144,27 @@ export function App() {
         alert('Invalid SARIF file: Missing runs array or SARIF version header.');
         return;
       }
+
+      // 1. Reset all filters and selection
       setFilters(initialFilters);
+      setSelectedFindingId(null);
+      setRawSarifModalFinding(null);
+      setModalFinding(null);
+      setIsMuteModalOpen(false);
+      setIsMuteManagerOpen(false);
+
+      // 2. Increment instance counter to force complete unmount of old table/panel
+      setReportInstanceId((prev) => prev + 1);
+
+      // 3. Set new raw content
       setRawSarif({ content: fileContent, filename: fileName });
-      
-      // Auto-select first finding if available
-      const tempReport = parseSarifJson(parsedJson as SarifLog, fileName);
-      if (tempReport.findings.length > 0) {
-        setSelectedFindingId(tempReport.findings[0].id);
-      }
     } catch (e: any) {
       alert(`Invalid JSON format: ${e.message}`);
     }
   };
 
   const handleFilterChange = (newFilters: Partial<FilterState>) => {
-    setFilters((prev) => ({ ...prev, ...newFilters }));
+    setFilters((prev: FilterState) => ({ ...prev, ...newFilters }));
   };
 
   const handleClearFilters = () => {
@@ -195,13 +229,12 @@ export function App() {
 
   // Selected Finding object
   const selectedFinding = useMemo(() => {
-    if (!report) return null;
-    return (
-      report.findings.find((f) => f.id === selectedFindingId) ||
-      filteredFindings[0] ||
-      report.findings[0] ||
-      null
-    );
+    if (!report || report.findings.length === 0) return null;
+    if (selectedFindingId) {
+      const match = report.findings.find((f) => f.id === selectedFindingId);
+      if (match) return match;
+    }
+    return filteredFindings[0] || report.findings[0] || null;
   }, [report, selectedFindingId, filteredFindings]);
 
   // Keyboard navigation for findings table
@@ -263,7 +296,7 @@ export function App() {
         />
       ) : (
         <>
-          {/* Top Header Navigation (Full Width) */}
+          {/* Global Application Header */}
           <Header
             report={report}
             filteredFindings={filteredFindings}
@@ -274,18 +307,19 @@ export function App() {
             onToggleTheme={handleToggleTheme}
           />
 
-          <div className="bg-white dark:bg-zinc-900 flex-1 flex flex-col transition-colors duration-200">
-            {/* Summary Metrics Bar (Full Width) */}
+          {/* Main Content Area */}
+          <main className="flex-1 w-full px-4 sm:px-6 lg:px-8 py-5 flex flex-col gap-5">
+            {/* Top Metrics Cards Summary */}
             <MetricsBar
+              key={`metrics_${reportInstanceId}_${report.fileName}`}
               report={report}
               selectedLevel={filters.selectedLevel}
               onSelectLevel={(level) => handleFilterChange({ selectedLevel: level })}
-              muteStatus={filters.muteStatus}
-              onSelectMuteStatus={(status) => handleFilterChange({ muteStatus: status })}
             />
 
-            {/* Search & Faceted Filter Bar (Full Width) */}
+            {/* Filter and Search Bar */}
             <FilterBar
+              key={`filter_${reportInstanceId}_${report.fileName}`}
               filters={filters}
               onFilterChange={handleFilterChange}
               onClearFilters={handleClearFilters}
@@ -294,64 +328,72 @@ export function App() {
               levelOptions={levelOptions}
             />
 
-            {/* 12-Column Responsive Grid Layout (Full Width, No Boxed Constraint) */}
-            <main className="flex-1 w-full p-4 sm:p-6 lg:p-8">
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-                {/* 8 Columns: Findings Table */}
-                <div className="lg:col-span-8">
-                  <FindingsTable
-                    findings={filteredFindings}
-                    selectedFindingId={selectedFinding?.id || null}
-                    onSelectFinding={(f) => setSelectedFindingId(f.id)}
-                    onToggleMute={handleOpenMuteModal}
-                    onViewRawSarif={(f) => setRawSarifModalFinding(f)}
-                  />
-                </div>
-
-                {/* 4 Columns: Details Panel */}
-                <div className="lg:col-span-4 sticky top-20">
-                  <DetailsPanel
-                    finding={selectedFinding}
-                    reportFileName={report.fileName}
-                    onToggleMute={handleOpenMuteModal}
-                    onViewRawSarif={(f) => setRawSarifModalFinding(f)}
-                  />
-                </div>
+            {/* Two-Column Workspace Layout */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+              {/* Left Column: Interactive Sortable Findings Table */}
+              <div className="lg:col-span-7 xl:col-span-7 flex flex-col">
+                <FindingsTable
+                  key={`table_${reportInstanceId}_${report.fileName}`}
+                  findings={filteredFindings}
+                  selectedFindingId={selectedFinding?.id || null}
+                  onSelectFinding={(f) => setSelectedFindingId(f.id)}
+                  onToggleMute={handleOpenMuteModal}
+                  onViewRawSarif={(f) => setRawSarifModalFinding(f)}
+                />
               </div>
-            </main>
-          </div>
 
-          {/* Footer Status Bar (Full Width) */}
-          <Footer report={report} filteredCount={filteredFindings.length} />
+              {/* Right Column: Deep Findings Detail Panel */}
+              <div className="lg:col-span-5 xl:col-span-5 flex flex-col sticky top-20">
+                <DetailsPanel
+                  key={`details_${reportInstanceId}_${report.fileName}`}
+                  finding={selectedFinding}
+                  reportFileName={report.fileName}
+                  onToggleMute={handleOpenMuteModal}
+                  onViewRawSarif={(f) => setRawSarifModalFinding(f)}
+                />
+              </div>
+            </div>
+          </main>
+
+          {/* Global Application Footer */}
+          <Footer
+            report={report}
+            filteredCount={filteredFindings.length}
+          />
         </>
       )}
 
-      {/* Individual Mute Dialog */}
-      <MuteModal
-        finding={modalFinding}
-        isOpen={isMuteModalOpen}
-        onClose={() => setIsMuteModalOpen(false)}
-        onConfirmMute={handleConfirmMute}
-        onConfirmUnmute={handleConfirmUnmute}
-      />
+      {/* Modal: Single Finding Mute Form */}
+      {isMuteModalOpen && modalFinding && (
+        <MuteModal
+          finding={modalFinding}
+          isOpen={isMuteModalOpen}
+          onClose={() => setIsMuteModalOpen(false)}
+          onConfirmMute={handleConfirmMute}
+          onConfirmUnmute={handleConfirmUnmute}
+        />
+      )}
 
-      {/* Mute Manager Dialog */}
-      <MuteManagerDialog
-        isOpen={isMuteManagerOpen}
-        onClose={() => setIsMuteManagerOpen(false)}
-        mutedRecords={mutedRecords}
-        onUnmute={handleConfirmUnmute}
-        onClearAll={handleClearAllMuted}
-      />
+      {/* Modal: Global Muted Alerts Manager */}
+      {isMuteManagerOpen && (
+        <MuteManagerDialog
+          isOpen={isMuteManagerOpen}
+          onClose={() => setIsMuteManagerOpen(false)}
+          mutedRecords={mutedRecords}
+          onUnmute={handleConfirmUnmute}
+          onClearAll={handleClearAllMuted}
+        />
+      )}
 
-      {/* Raw SARIF JSON Inspector Modal */}
-      <RawSarifModal
-        finding={rawSarifModalFinding}
-        isOpen={!!rawSarifModalFinding}
-        onClose={() => setRawSarifModalFinding(null)}
-      />
+      {/* Modal: Syntax Highlighted Raw SARIF Inspector */}
+      {rawSarifModalFinding && (
+        <RawSarifModal
+          finding={rawSarifModalFinding}
+          isOpen={!!rawSarifModalFinding}
+          onClose={() => setRawSarifModalFinding(null)}
+        />
+      )}
     </div>
   );
-}
-
+};
 export default App;

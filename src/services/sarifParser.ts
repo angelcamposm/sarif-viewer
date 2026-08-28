@@ -143,15 +143,18 @@ export function parseSarifJson(
       }
       const { effectiveLevel, isOverridden, overrideTag, overrideReason } = overrideResult;
 
-      // Deterministic fingerprint for stable ID & muting
-      const findingId =
+      // Stable deterministic fingerprint for cross-scan muting
+      const fingerprint =
         result.correlationGuid ||
         result.guid ||
         result.fingerprints?.guid ||
         result.partialFingerprints?.primaryLocationLineHash ||
         generateDeterministicHash([ruleId, filePath, line, column, messageText.substring(0, 40)]);
 
-      const muteRec = mutedRecords[findingId];
+      // Unique finding ID per report file and result index to guarantee zero React key collisions across records
+      const findingId = `${fileName}#r${runIndex}_res${resultIndex}_${fingerprint}`;
+
+      const muteRec = mutedRecords[findingId] || mutedRecords[fingerprint];
       const isMuted = !!muteRec;
 
       const normalized: NormalizedFinding = {
