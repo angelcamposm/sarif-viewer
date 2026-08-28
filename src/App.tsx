@@ -352,7 +352,7 @@ export const App: React.FC = () => {
           />
 
           {/* Main Content Area */}
-          <main className="flex-1 w-full px-4 sm:px-6 lg:px-8 py-5 flex flex-col gap-5">
+          <main className="flex-1 w-full flex flex-col">
             {/* Top Metrics Cards Summary */}
             <MetricsBar
               key={`metrics_${reportInstanceId}_${report.fileName}`}
@@ -373,7 +373,7 @@ export const App: React.FC = () => {
             />
 
             {/* Two-Column Workspace Layout */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+            <div className="bg-white grid grid-cols-1 lg:grid-cols-12 gap-5 items-start  px-4 sm:px-6 lg:px-8 py-5">
               {/* Left Column: Interactive Sortable Findings Table */}
               <div className="lg:col-span-7 xl:col-span-7 flex flex-col">
                 <FindingsTable
