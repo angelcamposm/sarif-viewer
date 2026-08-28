@@ -56,17 +56,8 @@ export const App: React.FC = () => {
     setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
   };
 
-  // Raw file state
-  const [rawSarif, setRawSarif] = useState<{ content: string; filename: string } | null>(() => {
-    const defaultSample = SAMPLE_REPORTS[0];
-    if (defaultSample) {
-      return {
-        content: JSON.stringify(defaultSample.data, null, 2),
-        filename: defaultSample.filename,
-      };
-    }
-    return null;
-  });
+  // Raw file state (null by default so the Welcome/EmptyState screen is shown initially)
+  const [rawSarif, setRawSarif] = useState<{ content: string; filename: string } | null>(null);
 
   // Report instance counter for clean unmounting/remounting of tables and panels
   const [reportInstanceId, setReportInstanceId] = useState(0);
