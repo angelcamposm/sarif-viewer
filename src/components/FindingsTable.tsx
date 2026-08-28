@@ -53,13 +53,6 @@ export const FindingsTable: React.FC<FindingsTableProps> = ({
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [pageSize, setPageSize] = useState<number>(25);
 
-  // Reset pagination whenever findings array reference changes
-  const [prevFindings, setPrevFindings] = useState(findings);
-  if (findings !== prevFindings) {
-    setPrevFindings(findings);
-    setCurrentPage(1);
-  }
-
   const handleSort = (field: SortField) => {
     if (sortField === field) {
       if (sortDirection === 'asc') {

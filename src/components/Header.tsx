@@ -39,6 +39,7 @@ interface HeaderProps {
   onFileLoaded: (fileContent: string, fileName: string) => void;
   onOpenMuteManager: () => void;
   onOpenDiagnostics?: () => void;
+  onCloseReport?: () => void;
   mutedCount: number;
   theme?: 'light' | 'dark';
   onToggleTheme?: () => void;
@@ -50,6 +51,7 @@ export const Header: React.FC<HeaderProps> = ({
   onFileLoaded,
   onOpenMuteManager,
   onOpenDiagnostics,
+  onCloseReport,
   mutedCount,
   theme,
   onToggleTheme,
@@ -214,6 +216,19 @@ export const Header: React.FC<HeaderProps> = ({
             <Info className="w-3.5 h-3.5 text-slate-400 dark:text-zinc-500" />
             <span>About</span>
           </button>
+
+          {/* Close Report Action (returns to welcome screen) */}
+          {onCloseReport && report && (
+            <button
+              type="button"
+              onClick={onCloseReport}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-700 dark:text-zinc-300 bg-white dark:bg-zinc-800 hover:bg-slate-50 dark:hover:bg-zinc-700 border border-slate-300 dark:border-zinc-700 rounded-md transition-colors shadow-2xs cursor-pointer"
+              title="Close active report and return to welcome screen"
+            >
+              <X className="w-3.5 h-3.5 text-slate-400 dark:text-zinc-500" />
+              <span>Close Report</span>
+            </button>
+          )}
 
           {/* Main Primary Action: Open SARIF */}
           <button

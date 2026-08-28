@@ -29,35 +29,60 @@ const initialFilters: FilterState = {
   muteStatus: 'all',
 };
 
+const SESSION_REPORT_KEY = 'sarif_viewer_active_report_v1';
+
 export const App: React.FC = () => {
   // Theme State: 'light' | 'dark'
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
-    if (typeof window !== 'undefined') {
-      const savedTheme = localStorage.getItem('sarif_viewer_theme') as 'light' | 'dark' | null;
-      if (savedTheme === 'light' || savedTheme === 'dark') return savedTheme;
-      if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-        return 'dark';
+    try {
+      if (typeof window !== 'undefined') {
+        const savedTheme = localStorage.getItem('sarif_viewer_theme') as 'light' | 'dark' | null;
+        if (savedTheme === 'light' || savedTheme === 'dark') return savedTheme;
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)')?.matches) {
+          return 'dark';
+        }
       }
+    } catch (e) {
+      console.warn('Theme initialization error:', e);
     }
     return 'light';
   });
 
   // Apply dark class to <html> root element
   useEffect(() => {
-    if (theme === 'dark') {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
+    try {
+      if (theme === 'dark') {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+      localStorage.setItem('sarif_viewer_theme', theme);
+    } catch (e) {
+      console.warn('Failed to save theme to localStorage:', e);
     }
-    localStorage.setItem('sarif_viewer_theme', theme);
   }, [theme]);
 
   const handleToggleTheme = () => {
     setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
   };
 
-  // Raw file state (null by default so the Welcome/EmptyState screen is shown initially)
-  const [rawSarif, setRawSarif] = useState<{ content: string; filename: string } | null>(null);
+  // Raw file state (restored safely from sessionStorage if user refreshed with F5)
+  const [rawSarif, setRawSarif] = useState<{ content: string; filename: string } | null>(() => {
+    try {
+      if (typeof window !== 'undefined' && window.sessionStorage) {
+        const saved = sessionStorage.getItem(SESSION_REPORT_KEY);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (parsed && typeof parsed.content === 'string' && typeof parsed.filename === 'string') {
+            return parsed;
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to restore session report:', e);
+    }
+    return null;
+  });
 
   // Report instance counter for clean unmounting/remounting of tables and panels
   const [reportInstanceId, setReportInstanceId] = useState(0);
@@ -128,7 +153,7 @@ export const App: React.FC = () => {
     return [...baseOptions, ...overrideOptions];
   }, [report]);
 
-  // Handle file loading - complete wipe and reset
+  // Handle file loading - complete wipe, reset, and session storage cache
   const handleFileLoaded = (fileContent: string, fileName: string) => {
     try {
       const parsedJson = JSON.parse(fileContent);
@@ -148,11 +173,36 @@ export const App: React.FC = () => {
       // 2. Increment instance counter to force complete unmount of old table/panel
       setReportInstanceId((prev) => prev + 1);
 
-      // 3. Set new raw content
-      setRawSarif({ content: fileContent, filename: fileName });
+      // 3. Set new raw content and persist in sessionStorage for refresh resiliency
+      const reportPayload = { content: fileContent, filename: fileName };
+      setRawSarif(reportPayload);
+
+      try {
+        if (typeof window !== 'undefined' && window.sessionStorage) {
+          sessionStorage.setItem(SESSION_REPORT_KEY, JSON.stringify(reportPayload));
+        }
+      } catch (storageErr) {
+        console.warn('Report too large for sessionStorage quota, caching skipped:', storageErr);
+      }
     } catch (e: any) {
       alert(`Invalid JSON format: ${e.message}`);
     }
+  };
+
+  // Close active report and return to Welcome/EmptyState
+  const handleCloseReport = () => {
+    try {
+      if (typeof window !== 'undefined' && window.sessionStorage) {
+        sessionStorage.removeItem(SESSION_REPORT_KEY);
+      }
+    } catch (e) {
+      console.warn('Failed to clear sessionStorage report:', e);
+    }
+    setRawSarif(null);
+    setFilters(initialFilters);
+    setSelectedFindingId(null);
+    setRawSarifModalFinding(null);
+    setModalFinding(null);
   };
 
   const handleFilterChange = (newFilters: Partial<FilterState>) => {
@@ -295,6 +345,7 @@ export const App: React.FC = () => {
             onFileLoaded={handleFileLoaded}
             onOpenMuteManager={() => setIsMuteManagerOpen(true)}
             onOpenDiagnostics={() => setIsDiagnosticsOpen(true)}
+            onCloseReport={handleCloseReport}
             mutedCount={totalMutedCount}
             theme={theme}
             onToggleTheme={handleToggleTheme}

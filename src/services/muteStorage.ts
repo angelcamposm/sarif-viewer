@@ -12,7 +12,9 @@ export const muteStorage = {
       if (typeof window === 'undefined' || !window.localStorage) return {};
       const data = localStorage.getItem(STORAGE_KEY);
       if (!data) return {};
-      return JSON.parse(data) as Record<string, MuteRecord>;
+      const parsed = JSON.parse(data);
+      if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return {};
+      return parsed as Record<string, MuteRecord>;
     } catch (e) {
       console.warn('Failed to read muted alerts from localStorage', e);
       return {};
