@@ -32,9 +32,12 @@ export const exportService = {
       'Line': f.line ?? '',
       'Column': f.column ?? '',
       'Tags': f.tags.join('; '),
+      'Taxonomies': f.taxonomies ? f.taxonomies.map((t) => t.id).join('; ') : '',
+      'Dataflow Steps': f.codeFlows ? f.codeFlows.reduce((acc, cf) => acc + cf.threadFlows.reduce((tAcc, tf) => tAcc + tf.steps.length, 0), 0) : 0,
+      'Automated Fixes': f.fixes ? f.fixes.length : 0,
       'Tool': f.toolName + (f.toolVersion ? ` ${f.toolVersion}` : ''),
       'Status': f.isMuted ? 'MUTED' : 'ACTIVE',
-      'Mute Reason': f.muteRecord?.reason || '',
+      'Mute Reason': f.muteRecord?.reason || (f.inSarifSuppressions?.[0]?.justification ? `In-SARIF: ${f.inSarifSuppressions[0].kind}` : ''),
       'Mute Justification': f.muteRecord?.justification || '',
       'Muted At': f.muteRecord?.mutedAt || '',
     }));
@@ -122,8 +125,18 @@ export const exportService = {
       md += `### ${idx + 1}. [${f.effectiveLevel.toUpperCase()}] ${f.ruleId}: ${f.ruleName || f.message.substring(0, 60)}\n\n`;
       md += `- **Location**: \`${f.filePath}${f.line ? `:${f.line}` : ''}\`\n`;
       md += `- **Tool**: ${f.toolName} ${f.toolVersion || ''}\n`;
+      if (f.taxonomies && f.taxonomies.length > 0) {
+        md += `- **Standards**: ${f.taxonomies.map((t) => `\`${t.id}\``).join(', ')}\n`;
+      }
       if (f.tags.length > 0) md += `- **Tags**: \`${f.tags.join('`, `')}\`\n`;
       if (f.isMuted) md += `- **Mute Status**: 🔇 Muted (${f.muteRecord?.reason || 'Suppressed'})\n`;
+      if (f.codeFlows && f.codeFlows.length > 0) {
+        const stepCount = f.codeFlows[0].threadFlows[0]?.steps.length || 0;
+        md += `- **Dataflow Trace**: ⚡ ${stepCount} step(s) recorded\n`;
+      }
+      if (f.fixes && f.fixes.length > 0) {
+        md += `- **Automated Fix**: 🔧 ${f.fixes.length} remediation patch(es) available\n`;
+      }
       md += `\n**Message**:\n> ${f.message.replace(/\n/g, '\n> ')}\n\n`;
       if (f.ruleDescription) {
         md += `**Rule Description**:\n${f.ruleDescription}\n\n`;

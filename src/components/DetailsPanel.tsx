@@ -1,6 +1,11 @@
 import React, { useState, useMemo } from 'react';
 import { NormalizedFinding } from '../types/viewer';
 import { TagChip } from './ui/Badge';
+import { TaxonomyBadge } from './ui/TaxonomyBadge';
+import { DataflowStepper } from './DataflowStepper';
+import { FixDiffViewer } from './FixDiffViewer';
+import { RelatedLocationsList } from './RelatedLocationsList';
+import { WebRequestInspector } from './WebRequestInspector';
 import { renderSafeMarkdown } from '../utils/sanitize';
 import {
   FileCode,
@@ -12,6 +17,8 @@ import {
   Code2,
   Toolbox,
   FileIcon,
+  Layers,
+  ShieldCheck,
 } from 'lucide-react';
 
 interface DetailsPanelProps {
@@ -29,7 +36,7 @@ export const DetailsPanel: React.FC<DetailsPanelProps> = ({
 }) => {
   const [copiedField, setCopiedField] = useState<string | null>(null);
 
-  // Unique tags deduplication (case-insensitive deduplication, omitting duplicates) - called unconditionally
+  // Unique tags deduplication
   const uniqueTags = useMemo(() => {
     if (!finding || !finding.tags) return [];
     const seen = new Set<string>();
@@ -64,7 +71,7 @@ export const DetailsPanel: React.FC<DetailsPanelProps> = ({
   // Extract custom non-empty properties
   const customProperties = Object.entries(finding.properties || {}).filter(
     ([key, val]) =>
-      !['tags', 'category', 'precision'].includes(key) &&
+      !['tags', 'category', 'precision', 'criticality'].includes(key) &&
       val !== undefined &&
       val !== null &&
       typeof val !== 'object'
@@ -76,7 +83,9 @@ export const DetailsPanel: React.FC<DetailsPanelProps> = ({
       <div className="p-4 sm:p-5 bg-slate-50/75 dark:bg-zinc-950/70 border-b border-slate-200 dark:border-zinc-800 flex items-center justify-between">
         <div>
           <h2 className="text-base font-bold text-slate-900 dark:text-zinc-100">Finding details</h2>
-          <span className="text-xs font-mono text-slate-400 dark:text-zinc-500">ID: {finding.id}</span>
+          <span className="text-xs font-mono text-slate-400 dark:text-zinc-500 truncate max-w-[200px] block" title={finding.id}>
+            ID: {finding.id}
+          </span>
         </div>
         <div className="flex items-center gap-2">
           {/* View Raw SARIF Modal Button */}
@@ -109,8 +118,8 @@ export const DetailsPanel: React.FC<DetailsPanelProps> = ({
         </div>
       </div>
 
-      <div className="p-4 sm:p-5 space-y-6 flex-1">
-        {/* Mute Notification Banner if Muted */}
+      <div className="p-4 sm:p-5 space-y-6 flex-1 overflow-y-auto">
+        {/* Local Storage Mute Notification Banner */}
         {finding.isMuted && finding.muteRecord && (
           <div className="bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/80 rounded-lg p-3.5 text-amber-900 dark:text-amber-300 text-xs">
             <div className="flex items-center gap-1.5 font-semibold mb-1">
@@ -128,13 +137,31 @@ export const DetailsPanel: React.FC<DetailsPanelProps> = ({
           </div>
         )}
 
-        {/* SECTION 1: FINDING */}
+        {/* In-SARIF Suppressions Banner */}
+        {finding.inSarifSuppressions && finding.inSarifSuppressions.length > 0 && (
+          <div className="bg-blue-50/70 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800/80 rounded-lg p-3.5 text-blue-900 dark:text-blue-300 text-xs space-y-1.5">
+            <div className="flex items-center gap-1.5 font-semibold">
+              <ShieldCheck className="w-4 h-4 text-blue-700 dark:text-blue-400" />
+              <span>In-SARIF Tool Suppression</span>
+            </div>
+            {finding.inSarifSuppressions.map((sup, sIdx) => (
+              <div key={sIdx} className="text-xs text-blue-800 dark:text-blue-300">
+                <span className="font-semibold uppercase tracking-wider text-[10px] px-1.5 py-0.2 bg-blue-100 dark:bg-blue-900/60 rounded mr-1.5">
+                  {sup.kind} ({sup.status})
+                </span>
+                {sup.justification && <span className="italic">"{sup.justification}"</span>}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* SECTION 1: FINDING & TAXONOMIES */}
         <section className="space-y-4">
           <div className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400">
             Finding
           </div>
 
-          {/* Baseline SARIF Level (plain text, not a badge) */}
+          {/* Baseline SARIF Level */}
           <div>
             <div className="text-xs text-slate-500 dark:text-zinc-400 font-medium mb-1.5">Baseline SARIF Level</div>
             <div className="font-mono text-slate-900 dark:text-zinc-100 text-sm font-semibold capitalize">
@@ -142,7 +169,7 @@ export const DetailsPanel: React.FC<DetailsPanelProps> = ({
             </div>
           </div>
 
-          {/* Overwrite Field (plain text, not a badge) */}
+          {/* Overwrite Field */}
           {finding.isLevelOverridden && (
             <div>
               <div className="text-xs text-slate-500 dark:text-zinc-400 font-medium mb-1.5">Overwrite Level</div>
@@ -154,7 +181,7 @@ export const DetailsPanel: React.FC<DetailsPanelProps> = ({
                   </span>
                 </span>
               </div>
-              {finding.isLevelOverridden && finding.overrideReason && (
+              {finding.overrideReason && (
                 <div className="mt-1 text-xs text-rose-600 dark:text-rose-400 font-normal">
                   {finding.overrideReason}
                 </div>
@@ -170,7 +197,19 @@ export const DetailsPanel: React.FC<DetailsPanelProps> = ({
             </div>
           </div>
 
-          {/* Message (plain readable text / markdown block, not a badge) */}
+          {/* Security Standards & Taxonomies (CWE, OWASP) */}
+          {finding.taxonomies && finding.taxonomies.length > 0 && (
+            <div>
+              <div className="text-xs text-slate-500 dark:text-zinc-400 font-medium mb-1.5">Security Standards & Taxonomies</div>
+              <div className="flex flex-wrap gap-1.5 py-1">
+                {finding.taxonomies.map((tax, idx) => (
+                  <TaxonomyBadge key={idx} taxonomy={tax} />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Message */}
           <div>
             <div className="text-xs text-slate-500 dark:text-zinc-400 font-medium mb-1.5">Message</div>
             <div
@@ -181,7 +220,7 @@ export const DetailsPanel: React.FC<DetailsPanelProps> = ({
             />
           </div>
 
-          {/* Tags (guaranteed unique, duplicates omitted) */}
+          {/* Tags */}
           {uniqueTags.length > 0 && (
             <div>
               <div className="text-xs text-slate-500 dark:text-zinc-400 font-medium mb-1.5">Tags</div>
@@ -194,12 +233,48 @@ export const DetailsPanel: React.FC<DetailsPanelProps> = ({
           )}
         </section>
 
-        {/* SECTION 2: LOCATION */}
+        {/* SECTION 2: INTERACTIVE DATAFLOW STEPPER (IF AVAILABLE) */}
+        {finding.codeFlows && finding.codeFlows.length > 0 && (
+          <section className="pt-4 border-t border-slate-200 dark:border-zinc-800">
+            <DataflowStepper codeFlows={finding.codeFlows} />
+          </section>
+        )}
+
+        {/* SECTION 3: AUTOMATED FIX DIFF (IF AVAILABLE) */}
+        {finding.fixes && finding.fixes.length > 0 && (
+          <section className="pt-4 border-t border-slate-200 dark:border-zinc-800">
+            <FixDiffViewer fixes={finding.fixes} originalSnippet={finding.codeSnippet} />
+          </section>
+        )}
+
+        {/* SECTION 4: RELATED SECONDARY LOCATIONS (IF AVAILABLE) */}
+        {finding.relatedLocations && finding.relatedLocations.length > 0 && (
+          <section className="pt-4 border-t border-slate-200 dark:border-zinc-800">
+            <RelatedLocationsList relatedLocations={finding.relatedLocations} />
+          </section>
+        )}
+
+        {/* SECTION 5: DAST / WEB TRAFFIC (IF AVAILABLE) */}
+        {(finding.webRequest || finding.webResponse) && (
+          <section className="pt-4 border-t border-slate-200 dark:border-zinc-800">
+            <WebRequestInspector webRequest={finding.webRequest} webResponse={finding.webResponse} />
+          </section>
+        )}
+
+        {/* SECTION 6: PRIMARY LOCATION */}
         {finding.filePath && finding.filePath !== 'Not provided' && (
           <section className="space-y-3.5 pt-4 border-t border-slate-200 dark:border-zinc-800">
             <div className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400">
-              Location
+              Primary Location
             </div>
+
+            {/* Logical Locations Breadcrumbs */}
+            {finding.logicalLocations && finding.logicalLocations.length > 0 && (
+              <div className="p-2 bg-slate-50 dark:bg-zinc-950 rounded border border-slate-200 dark:border-zinc-800 flex items-center gap-1.5 text-xs text-slate-700 dark:text-zinc-300 font-mono">
+                <Layers className="w-3.5 h-3.5 text-slate-400" />
+                <span className="truncate">{finding.logicalLocations.join(' › ')}</span>
+              </div>
+            )}
 
             <div>
               <div className="flex items-center justify-between text-xs text-slate-500 dark:text-zinc-400 font-medium mb-1.5">
@@ -233,7 +308,7 @@ export const DetailsPanel: React.FC<DetailsPanelProps> = ({
               </div>
             </div>
 
-            {/* Snippet preview if available */}
+            {/* Snippet preview */}
             {finding.codeSnippet && (
               <div>
                 <div className="text-xs text-slate-500 dark:text-zinc-400 font-medium mb-1.5">Source Snippet</div>
@@ -246,7 +321,7 @@ export const DetailsPanel: React.FC<DetailsPanelProps> = ({
           </section>
         )}
 
-        {/* SECTION 3: RULE */}
+        {/* SECTION 7: RULE & DOCUMENTATION */}
         <section className="space-y-3.5 pt-4 border-t border-slate-200 dark:border-zinc-800">
           <div className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400">
             Rule
@@ -292,7 +367,7 @@ export const DetailsPanel: React.FC<DetailsPanelProps> = ({
           )}
         </section>
 
-        {/* SECTION 4: METADATA & PROPERTIES */}
+        {/* SECTION 8: METADATA & PROPERTIES */}
         {customProperties.length > 0 && (
           <section className="space-y-2.5 pt-4 border-t border-slate-200 dark:border-zinc-800">
             <div className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400">
@@ -311,7 +386,7 @@ export const DetailsPanel: React.FC<DetailsPanelProps> = ({
           </section>
         )}
 
-        {/* SECTION 5: CONTEXT */}
+        {/* SECTION 9: CONTEXT */}
         <section className="space-y-3.5 pt-4 border-t border-slate-200 dark:border-zinc-800">
           <div className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400">
             Context

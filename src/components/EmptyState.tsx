@@ -82,7 +82,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
-        className={`max-w-xl w-full text-center p-10 rounded-2xl border border-dashed transition-all ${
+        className={`max-w-2xl w-full text-center p-8 sm:p-10 rounded-2xl border border-dashed transition-all ${
           isDragging
             ? 'border-blue-500 bg-blue-50/50 dark:bg-blue-950/30 scale-[1.01]'
             : 'border-slate-300 dark:border-zinc-800 bg-white/60 dark:bg-zinc-900/70 hover:border-slate-400 dark:hover:border-zinc-700 hover:bg-white dark:hover:bg-zinc-900'

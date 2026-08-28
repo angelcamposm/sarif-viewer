@@ -7,7 +7,6 @@ import {
 } from './types/viewer';
 import { parseSarifJson } from './services/sarifParser';
 import { muteStorage } from './services/muteStorage';
-import { SAMPLE_REPORTS } from './data/sampleReports';
 
 // Components
 import { Header } from './components/Header';
@@ -19,6 +18,7 @@ import { EmptyState } from './components/EmptyState';
 import { MuteModal } from './components/MuteModal';
 import { MuteManagerDialog } from './components/MuteManagerDialog';
 import { RawSarifModal } from './components/RawSarifModal';
+import { InvocationsPanel } from './components/InvocationsPanel';
 import { Footer } from './components/Footer';
 
 const initialFilters: FilterState = {
@@ -75,6 +75,7 @@ export const App: React.FC = () => {
   const [isMuteModalOpen, setIsMuteModalOpen] = useState(false);
   const [modalFinding, setModalFinding] = useState<NormalizedFinding | null>(null);
   const [isMuteManagerOpen, setIsMuteManagerOpen] = useState(false);
+  const [isDiagnosticsOpen, setIsDiagnosticsOpen] = useState(false);
   const [rawSarifModalFinding, setRawSarifModalFinding] = useState<NormalizedFinding | null>(null);
 
   // Subscribe to mute storage changes
@@ -293,6 +294,7 @@ export const App: React.FC = () => {
             filteredFindings={filteredFindings}
             onFileLoaded={handleFileLoaded}
             onOpenMuteManager={() => setIsMuteManagerOpen(true)}
+            onOpenDiagnostics={() => setIsDiagnosticsOpen(true)}
             mutedCount={totalMutedCount}
             theme={theme}
             onToggleTheme={handleToggleTheme}
@@ -373,6 +375,15 @@ export const App: React.FC = () => {
           mutedRecords={mutedRecords}
           onUnmute={handleConfirmUnmute}
           onClearAll={handleClearAllMuted}
+        />
+      )}
+
+      {/* Modal: Tool Invocations & Diagnostics */}
+      {isDiagnosticsOpen && report && (
+        <InvocationsPanel
+          report={report}
+          isOpen={isDiagnosticsOpen}
+          onClose={() => setIsDiagnosticsOpen(false)}
         />
       )}
 

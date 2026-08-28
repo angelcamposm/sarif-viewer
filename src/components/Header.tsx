@@ -18,6 +18,7 @@ import {
   Bug,
   Globe,
   Sparkles,
+  Terminal,
 } from 'lucide-react';
 import { ParsedSarifReport, NormalizedFinding } from '../types/viewer';
 import { exportService } from '../services/exportService';
@@ -37,6 +38,7 @@ interface HeaderProps {
   filteredFindings: NormalizedFinding[];
   onFileLoaded: (fileContent: string, fileName: string) => void;
   onOpenMuteManager: () => void;
+  onOpenDiagnostics?: () => void;
   mutedCount: number;
   theme?: 'light' | 'dark';
   onToggleTheme?: () => void;
@@ -47,6 +49,7 @@ export const Header: React.FC<HeaderProps> = ({
   filteredFindings,
   onFileLoaded,
   onOpenMuteManager,
+  onOpenDiagnostics,
   mutedCount,
   theme,
   onToggleTheme,
@@ -188,6 +191,19 @@ export const Header: React.FC<HeaderProps> = ({
               </div>
             )}
           </div>
+
+          {/* Tool Invocations / Diagnostics Button */}
+          {onOpenDiagnostics && report && (
+            <button
+              type="button"
+              onClick={onOpenDiagnostics}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-700 dark:text-zinc-300 bg-white dark:bg-zinc-800 hover:bg-slate-50 dark:hover:bg-zinc-700 border border-slate-300 dark:border-zinc-700 rounded-md transition-colors shadow-2xs cursor-pointer"
+              title="View Tool Invocations & Diagnostics"
+            >
+              <Terminal className="w-3.5 h-3.5 text-slate-400 dark:text-zinc-500" />
+              <span>Diagnostics</span>
+            </button>
+          )}
 
           {/* Rate this app / Info Button */}
           <button

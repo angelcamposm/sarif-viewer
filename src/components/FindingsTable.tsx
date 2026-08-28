@@ -14,6 +14,10 @@ import {
   ChevronRight,
   ChevronsLeft,
   ChevronsRight,
+  Activity,
+  Wrench,
+  Globe,
+  ShieldCheck,
 } from 'lucide-react';
 
 type SortField = 'rule' | 'level' | 'message' | 'file';
@@ -156,7 +160,7 @@ export const FindingsTable: React.FC<FindingsTableProps> = ({
               {/* Rule Column */}
               <th
                 onClick={() => handleSort('rule')}
-                className="py-3 px-4 w-32 cursor-pointer hover:bg-slate-100/80 dark:hover:bg-zinc-800/80 transition-colors group/th"
+                className="py-3 px-4 w-36 cursor-pointer hover:bg-slate-100/80 dark:hover:bg-zinc-800/80 transition-colors group/th"
                 title="Click to sort by Rule ID"
               >
                 <div className="flex items-center justify-between gap-1">
@@ -220,9 +224,48 @@ export const FindingsTable: React.FC<FindingsTableProps> = ({
                       : 'hover:bg-slate-50/80 dark:hover:bg-zinc-800/60 text-slate-700 dark:text-zinc-300'
                   }`}
                 >
-                  {/* Rule ID */}
+                  {/* Rule ID & Capability Badges */}
                   <td className="py-3 px-4 whitespace-nowrap align-middle font-mono font-semibold text-slate-900 dark:text-zinc-100">
-                    <span className="hover:underline">{f.ruleId}</span>
+                    <div className="flex flex-col gap-1">
+                      <span className="hover:underline">{f.ruleId}</span>
+                      <div className="flex items-center gap-1">
+                        {f.codeFlows && f.codeFlows.length > 0 && (
+                          <span
+                            className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 text-[10px] font-mono"
+                            title="Interactive Dataflow Taint Trace Available"
+                          >
+                            <Activity className="w-2.5 h-2.5" />
+                            <span>Flow</span>
+                          </span>
+                        )}
+                        {f.fixes && f.fixes.length > 0 && (
+                          <span
+                            className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 text-[10px] font-mono"
+                            title="Automated Fix & Code Diff Available"
+                          >
+                            <Wrench className="w-2.5 h-2.5" />
+                            <span>Fix</span>
+                          </span>
+                        )}
+                        {(f.webRequest || f.webResponse) && (
+                          <span
+                            className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 text-[10px] font-mono"
+                            title="DAST HTTP Traffic Available"
+                          >
+                            <Globe className="w-2.5 h-2.5" />
+                            <span>DAST</span>
+                          </span>
+                        )}
+                        {f.inSarifSuppressions && f.inSarifSuppressions.length > 0 && (
+                          <span
+                            className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400 text-[10px] font-mono"
+                            title="Suppressed inside SARIF"
+                          >
+                            <ShieldCheck className="w-2.5 h-2.5" />
+                          </span>
+                        )}
+                      </div>
+                    </div>
                   </td>
 
                   {/* Level Badge */}
@@ -330,7 +373,7 @@ export const FindingsTable: React.FC<FindingsTableProps> = ({
             </select>
           </div>
 
-          {/* Page Navigation Controls (if not 'All') */}
+          {/* Page Navigation Controls */}
           {!isAll && totalPages > 1 && (
             <div className="flex items-center gap-1">
               <button

@@ -1,18 +1,39 @@
-import { SarifLog, Run, Result, ReportingDescriptor } from '../types/sarif';
+import {
+  SarifLog,
+  Run,
+  Result,
+  ReportingDescriptor,
+  CodeFlow,
+  ThreadFlow,
+  ThreadFlowLocation,
+  Fix,
+  Location,
+  Suppression,
+} from '../types/sarif';
 import {
   ParsedSarifReport,
   NormalizedFinding,
   SarifRunSummary,
   SarifLevel,
   MuteRecord,
+  NormalizedCodeFlow,
+  NormalizedCodeFlowStep,
+  NormalizedFix,
+  NormalizedRelatedLocation,
+  NormalizedInSarifSuppression,
+  NormalizedWebRequest,
+  NormalizedWebResponse,
 } from '../types/viewer';
 import { resolveEffectiveLevel, normalizeSarifLevel } from './criticalityEngine';
 import { extractApplicationMetadata } from './metadataExtractor';
 import { muteStorage } from './muteStorage';
 import { generateDeterministicHash } from '../utils/hash';
+import { resolveArtifactPath } from './uriResolver';
+import { resolveTaxonomies } from './taxonomyResolver';
+import { extractSnippetFromArtifacts } from './snippetExtractor';
 
 /**
- * Normalizes and parses a SARIF 2.1.0 JSON object into structured, indexed viewer models.
+ * Normalizes and parses a SARIF 2.1.0 JSON object into rich, indexed viewer models.
  */
 export function parseSarifJson(
   sarif: SarifLog,
@@ -29,12 +50,15 @@ export function parseSarifJson(
 
   const ruleCountMap = new Map<string, { id: string; name?: string; count: number }>();
   const tagCountMap = new Map<string, number>();
+  const taxonomyCountMap = new Map<string, { taxonomyName: string; id: string; count: number; name?: string }>();
 
   const mutedRecords = customMutedRecords || muteStorage.getAll();
 
   runs.forEach((run: Run, runIndex: number) => {
     const driver = run.tool?.driver || { name: 'Static Analysis Tool' };
     const driverRules: ReportingDescriptor[] = Array.isArray(driver.rules) ? driver.rules : [];
+    const artifacts = Array.isArray(run.artifacts) ? run.artifacts : [];
+    const taxonomiesCatalog = Array.isArray(run.taxonomies) ? run.taxonomies : [];
     
     // Map rule IDs and indices to rules
     const ruleMapById = new Map<string, ReportingDescriptor>();
@@ -45,7 +69,7 @@ export function parseSarifJson(
       ruleMapByIndex.set(idx, rule);
     });
 
-    // Also check tool extensions for rules
+    // Check tool extensions for additional rules
     if (Array.isArray(run.tool?.extensions)) {
       run.tool.extensions.forEach((ext) => {
         if (Array.isArray(ext.rules)) {
@@ -78,7 +102,6 @@ export function parseSarifJson(
       let messageText = result.message?.text || '';
       const messageMarkdown = result.message?.markdown;
 
-      // If message uses placeholders or rule message string
       if (!messageText && result.message?.id && matchedRule?.messageStrings?.[result.message.id]) {
         messageText = matchedRule.messageStrings[result.message.id].text;
       }
@@ -86,19 +109,43 @@ export function parseSarifJson(
         messageText = ruleDescription || 'No message provided by analyzer';
       }
 
-      // Location details
+      // Location details with URI resolution
       const primaryLoc = result.locations?.[0];
       const physLoc = primaryLoc?.physicalLocation;
-      const rawUri = physLoc?.artifactLocation?.uri || '';
-      const filePath = rawUri || (result.analysisTarget?.uri || 'Not provided');
-      const fileNameOnly = filePath !== 'Not provided' ? filePath.split(/[/\\]/).pop() || filePath : 'Not provided';
+      const { filePath, fileName: fileNameOnly } = resolveArtifactPath(
+        physLoc?.artifactLocation,
+        run.originalUriBaseIds,
+        result.analysisTarget?.uri
+      );
+
       const line = physLoc?.region?.startLine ?? null;
       const column = physLoc?.region?.startColumn ?? null;
       const endLine = physLoc?.region?.endLine ?? null;
       const endColumn = physLoc?.region?.endColumn ?? null;
-      const codeSnippet = physLoc?.region?.snippet?.text;
 
-      // Tags extraction from result properties, rule properties, taxa, etc.
+      // Code snippet extraction with fallback to run.artifacts
+      let codeSnippet = physLoc?.region?.snippet?.text;
+      if (!codeSnippet && physLoc?.region) {
+        codeSnippet = extractSnippetFromArtifacts(
+          artifacts,
+          physLoc.artifactLocation?.index,
+          filePath,
+          physLoc.region
+        );
+      }
+
+      // Logical locations (e.g. Class / Method)
+      const logicalLocations: string[] = [];
+      if (Array.isArray(primaryLoc?.logicalLocations)) {
+        primaryLoc.logicalLocations.forEach((ll) => {
+          const name = ll.fullyQualifiedName || ll.name;
+          if (name) {
+            logicalLocations.push(ll.kind ? `${ll.kind}: ${name}` : name);
+          }
+        });
+      }
+
+      // Tags extraction
       const resultTags: string[] = [];
       if (Array.isArray(result.properties?.tags)) {
         result.properties.tags.forEach((t) => typeof t === 'string' && resultTags.push(t.trim()));
@@ -131,19 +178,27 @@ export function parseSarifJson(
         }
       }
 
+      // Taxonomies Resolution (CWE, OWASP, NIST)
+      const taxonomies = resolveTaxonomies(
+        result.taxa,
+        taxonomiesCatalog,
+        matchedRule?.relationships || [],
+        tags
+      );
+
       // Determine baseline SARIF level
       const baselineLevel: SarifLevel = normalizeSarifLevel(
         result.level || matchedRule?.defaultConfiguration?.level
       );
 
-      // Apply Criticality Tag Override Engine (Result-level tags take precedence over Rule-level tags)
+      // Criticality Tag Override Engine
       let overrideResult = resolveEffectiveLevel(baselineLevel, resultTags);
       if (!overrideResult.hasCriticalityTag && ruleTags.length > 0) {
         overrideResult = resolveEffectiveLevel(baselineLevel, ruleTags);
       }
       const { effectiveLevel, isOverridden, overrideTag, overrideReason } = overrideResult;
 
-      // Stable deterministic fingerprint for cross-scan muting
+      // Deterministic fingerprint for cross-scan muting
       const fingerprint =
         result.correlationGuid ||
         result.guid ||
@@ -151,11 +206,164 @@ export function parseSarifJson(
         result.partialFingerprints?.primaryLocationLineHash ||
         generateDeterministicHash([ruleId, filePath, line, column, messageText.substring(0, 40)]);
 
-      // Unique finding ID per report file and result index to guarantee zero React key collisions across records
+      // Unique finding ID per report file and result index
       const findingId = `${fileName}#r${runIndex}_res${resultIndex}_${fingerprint}`;
 
+      // In-SARIF Suppressions
+      const inSarifSuppressions: NormalizedInSarifSuppression[] = [];
+      if (Array.isArray(result.suppressions) && result.suppressions.length > 0) {
+        result.suppressions.forEach((sup: Suppression) => {
+          inSarifSuppressions.push({
+            kind: sup.kind || 'inSource',
+            status: sup.status || 'accepted',
+            justification: sup.justification || sup.properties?.justification,
+            location: sup.location?.physicalLocation?.artifactLocation?.uri,
+          });
+        });
+      }
+
       const muteRec = mutedRecords[findingId] || mutedRecords[fingerprint];
-      const isMuted = !!muteRec;
+      const isMuted = !!muteRec || inSarifSuppressions.some((s) => s.status === 'accepted');
+
+      // Parse CodeFlows & ThreadFlows (Taint / Dataflow Analysis)
+      let parsedCodeFlows: NormalizedCodeFlow[] | undefined;
+      if (Array.isArray(result.codeFlows) && result.codeFlows.length > 0) {
+        parsedCodeFlows = result.codeFlows.map((cf: CodeFlow) => {
+          const threadFlows = (cf.threadFlows || []).map((tf: ThreadFlow) => {
+            const steps: NormalizedCodeFlowStep[] = (tf.locations || []).map((tfl: ThreadFlowLocation, stepIdx: number) => {
+              const loc = tfl.location?.physicalLocation;
+              const stepPath = resolveArtifactPath(loc?.artifactLocation, run.originalUriBaseIds);
+              
+              let stepSnippet = loc?.region?.snippet?.text;
+              if (!stepSnippet && loc?.region) {
+                stepSnippet = extractSnippetFromArtifacts(artifacts, loc.artifactLocation?.index, stepPath.filePath, loc.region);
+              }
+
+              // Extract variable states at this step if available
+              const stepState: Record<string, string> = {};
+              if (tfl.properties?.state && typeof tfl.properties.state === 'object') {
+                Object.entries(tfl.properties.state).forEach(([k, v]) => {
+                  stepState[k] = String(v);
+                });
+              }
+
+              return {
+                step: tfl.step ?? stepIdx + 1,
+                importance: tfl.importance || 'important',
+                message: tfl.location?.message?.text || tfl.properties?.message,
+                filePath: stepPath.filePath,
+                fileName: stepPath.fileName,
+                line: loc?.region?.startLine ?? null,
+                column: loc?.region?.startColumn ?? null,
+                endLine: loc?.region?.endLine ?? null,
+                endColumn: loc?.region?.endColumn ?? null,
+                codeSnippet: stepSnippet,
+                kinds: tfl.kinds,
+                executionOrder: tfl.executionOrder,
+                state: Object.keys(stepState).length > 0 ? stepState : undefined,
+                module: tfl.module,
+              };
+            });
+
+            return {
+              id: tf.id,
+              message: tf.message?.text,
+              steps,
+            };
+          });
+
+          return {
+            message: cf.message?.text,
+            threadFlows,
+          };
+        });
+      }
+
+      // Parse Fixes & ArtifactChanges (Automated Code Remediation)
+      let parsedFixes: NormalizedFix[] | undefined;
+      if (Array.isArray(result.fixes) && result.fixes.length > 0) {
+        parsedFixes = result.fixes.map((fx: Fix) => {
+          const artifactChanges = (fx.artifactChanges || []).map((ac) => {
+            const acPath = resolveArtifactPath(ac.artifactLocation, run.originalUriBaseIds);
+            const replacements = (ac.replacements || []).map((rep) => ({
+              deletedRegion: {
+                startLine: rep.deletedRegion.startLine || 1,
+                startColumn: rep.deletedRegion.startColumn,
+                endLine: rep.deletedRegion.endLine || rep.deletedRegion.startLine || 1,
+                endColumn: rep.deletedRegion.endColumn,
+              },
+              insertedContent: rep.insertedContent?.text,
+            }));
+
+            return {
+              filePath: acPath.filePath,
+              fileName: acPath.fileName,
+              replacements,
+            };
+          });
+
+          return {
+            description: fx.description?.text,
+            artifactChanges,
+          };
+        });
+      }
+
+      // Parse RelatedLocations (Secondary & Multi-site locations)
+      let parsedRelatedLocations: NormalizedRelatedLocation[] | undefined;
+      if (Array.isArray(result.relatedLocations) && result.relatedLocations.length > 0) {
+        parsedRelatedLocations = result.relatedLocations.map((relLoc: Location) => {
+          const relPath = resolveArtifactPath(relLoc.physicalLocation?.artifactLocation, run.originalUriBaseIds);
+          let relSnippet = relLoc.physicalLocation?.region?.snippet?.text;
+          if (!relSnippet && relLoc.physicalLocation?.region) {
+            relSnippet = extractSnippetFromArtifacts(
+              artifacts,
+              relLoc.physicalLocation.artifactLocation?.index,
+              relPath.filePath,
+              relLoc.physicalLocation.region
+            );
+          }
+
+          return {
+            id: relLoc.id,
+            message: relLoc.message?.text,
+            filePath: relPath.filePath,
+            fileName: relPath.fileName,
+            line: relLoc.physicalLocation?.region?.startLine ?? null,
+            column: relLoc.physicalLocation?.region?.startColumn ?? null,
+            codeSnippet: relSnippet,
+          };
+        });
+      }
+
+      // Parse WebRequest & WebResponse (DAST / API Traffic)
+      let parsedWebRequest: NormalizedWebRequest | undefined;
+      if (result.webRequest) {
+        const req = result.webRequest as any;
+        parsedWebRequest = {
+          method: req.method,
+          target: req.target,
+          protocol: req.protocol,
+          version: req.version,
+          headers: req.headers,
+          parameters: req.parameters,
+          body: typeof req.body === 'string' ? req.body : req.body?.text,
+        };
+      }
+
+      let parsedWebResponse: NormalizedWebResponse | undefined;
+      if (result.webResponse) {
+        const res = result.webResponse as any;
+        parsedWebResponse = {
+          statusCode: res.statusCode,
+          reasonPhrase: res.reasonPhrase,
+          protocol: res.protocol,
+          version: res.version,
+          headers: res.headers,
+          body: typeof res.body === 'string' ? res.body : res.body?.text,
+          noResponseReceived: res.noResponseReceived,
+        };
+      }
 
       const normalized: NormalizedFinding = {
         id: findingId,
@@ -184,6 +392,7 @@ export function parseSarifJson(
         endColumn,
         codeSnippet,
         tags,
+        taxonomies,
         properties: {
           ...(matchedRule?.properties || {}),
           ...(result.properties || {}),
@@ -192,6 +401,14 @@ export function parseSarifJson(
         muteRecord: muteRec,
         rawResult: result,
         rawRule: matchedRule,
+        codeFlows: parsedCodeFlows,
+        fixes: parsedFixes,
+        relatedLocations: parsedRelatedLocations,
+        inSarifSuppressions: inSarifSuppressions.length > 0 ? inSarifSuppressions : undefined,
+        webRequest: parsedWebRequest,
+        webResponse: parsedWebResponse,
+        baselineState: result.baselineState,
+        logicalLocations: logicalLocations.length > 0 ? logicalLocations : undefined,
       };
 
       allFindings.push(normalized);
@@ -204,6 +421,19 @@ export function parseSarifJson(
       // Aggregate tags count
       tags.forEach((tag) => {
         tagCountMap.set(tag, (tagCountMap.get(tag) || 0) + 1);
+      });
+
+      // Aggregate taxonomies count
+      taxonomies.forEach((tax) => {
+        const taxKey = `${tax.taxonomyName}:${tax.id}`;
+        const existingTax = taxonomyCountMap.get(taxKey) || {
+          taxonomyName: tax.taxonomyName,
+          id: tax.id,
+          count: 0,
+          name: tax.name,
+        };
+        existingTax.count++;
+        taxonomyCountMap.set(taxKey, existingTax);
       });
     });
 
@@ -239,6 +469,7 @@ export function parseSarifJson(
   const allTags = Array.from(tagCountMap.entries())
     .map(([tag, count]) => ({ tag, count }))
     .sort((a, b) => b.count - a.count);
+  const allTaxonomies = Array.from(taxonomyCountMap.values()).sort((a, b) => b.count - a.count);
 
   const globalMetadata = extractApplicationMetadata(runs[0], sarif.properties);
 
@@ -256,6 +487,7 @@ export function parseSarifJson(
     findings: allFindings,
     allRules,
     allTags,
+    allTaxonomies,
     allLevels: ['error', 'warning', 'note', 'none'],
     globalMetadata,
   };
