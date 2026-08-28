@@ -12,8 +12,7 @@ on:
         default: 'v1.0.0'
 
 permissions:
-  contents: write
-  packages: write
+  contents: read
 
 jobs:
   # ----------------------------------------------------------------------------
@@ -22,6 +21,8 @@ jobs:
   build-and-release:
     name: Create GitHub Release & Static Package
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     steps:
       - name: Checkout repository
@@ -78,6 +79,9 @@ jobs:
     name: Build & Publish Docker Image (GHCR)
     runs-on: ubuntu-latest
     needs: build-and-release
+    permissions:
+      contents: read
+      packages: write
 
     steps:
       - name: Checkout repository
