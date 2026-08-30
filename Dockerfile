@@ -11,7 +11,7 @@ WORKDIR /app
 
 # Install dependencies with clean cache
 COPY package.json package-lock.json ./
-RUN npm ci
+RUN npm ci --ignore-scripts
 
 # Copy application source code
 COPY tsconfig.json vite.config.ts index.html ./

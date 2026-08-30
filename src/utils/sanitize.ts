@@ -9,9 +9,9 @@ export function renderSafeMarkdown(markdownText?: string): string {
 
   // Escape raw HTML entities first
   let html = markdownText
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;');
 
   // Code blocks: ```language ... ```
   html = html.replace(/```([a-zA-Z0-9_-]*)\n([\s\S]*?)```/g, (_match, _lang, code) => {
@@ -29,11 +29,11 @@ export function renderSafeMarkdown(markdownText?: string): string {
   html = html.replace(/\*([^*]+)\*/g, '<em>$1</em>');
   html = html.replace(/_([^_]+)_/g, '<em>$1</em>');
 
-  // Markdown links: [text](url)
-  html = html.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline inline-flex items-center gap-0.5">$1</a>');
+  // Markdown links: [text](url) - Linear complexity regex
+  html = html.replace(/\[([^\]\n]+)\]\((https?:\/\/[^)\s\n]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline inline-flex items-center gap-0.5">$1</a>');
 
   // Line breaks
-  html = html.replace(/\n/g, '<br/>');
+  html = html.replaceAll('\n', '<br/>');
 
   // Sanitize with DOMPurify allowing only safe tags and attributes
   return DOMPurify.sanitize(html, {
