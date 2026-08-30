@@ -14,7 +14,7 @@ export function renderSafeMarkdown(markdownText?: string): string {
     .replace(/>/g, '&gt;');
 
   // Code blocks: ```language ... ```
-  html = html.replace(/```([a-zA-Z0-9_-]*)\n([\s\S]*?)```/g, (_match, lang, code) => {
+  html = html.replace(/```([a-zA-Z0-9_-]*)\n([\s\S]*?)```/g, (_match, _lang, code) => {
     return `<pre class="bg-slate-900 text-slate-100 p-3 rounded my-2 text-xs overflow-x-auto font-mono"><code>${code}</code></pre>`;
   });
 
