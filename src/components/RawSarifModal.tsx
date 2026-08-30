@@ -48,11 +48,10 @@ export const RawSarifModal: React.FC<RawSarifModalProps> = ({
   };
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
+    <dialog
+      open
       aria-labelledby="raw-sarif-title"
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs w-full h-full border-none max-w-none max-h-none overflow-hidden m-0"
     >
       <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-2xl border border-slate-200 dark:border-zinc-800 max-w-3xl w-full flex flex-col max-h-[85vh] overflow-hidden text-slate-900 dark:text-zinc-100">
         {/* Modal Header */}
@@ -139,6 +138,6 @@ export const RawSarifModal: React.FC<RawSarifModalProps> = ({
           </div>
         </div>
       </div>
-    </div>
+    </dialog>
   );
 };

@@ -18,6 +18,19 @@ interface DataflowStepperProps {
   codeFlows: NormalizedCodeFlow[];
 }
 
+function getTimelineStepClass(isCurrent: boolean, isSource: boolean, isSink: boolean): string {
+  if (isCurrent) {
+    return 'bg-blue-600 text-white shadow-sm font-bold scale-105';
+  }
+  if (isSource) {
+    return 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100';
+  }
+  if (isSink) {
+    return 'bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800 hover:bg-rose-100';
+  }
+  return 'bg-white dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 border border-slate-200 dark:border-zinc-700 hover:bg-slate-50';
+}
+
 const DataflowFlowSelectors: React.FC<{
   codeFlows: NormalizedCodeFlow[];
   threadFlows: NormalizedThreadFlow[];
@@ -46,7 +59,7 @@ const DataflowFlowSelectors: React.FC<{
             className="py-1 px-2 text-xs bg-white dark:bg-zinc-800 text-slate-800 dark:text-zinc-200 border border-slate-300 dark:border-zinc-700 rounded-md font-medium"
           >
             {codeFlows.map((cf, idx) => (
-              <option key={idx} value={idx}>
+              <option key={`flow-${cf.message || idx}`} value={idx}>
                 {cf.message || `Flow #${idx + 1}`}
               </option>
             ))}
@@ -63,7 +76,7 @@ const DataflowFlowSelectors: React.FC<{
             className="py-1 px-2 text-xs bg-white dark:bg-zinc-800 text-slate-800 dark:text-zinc-200 border border-slate-300 dark:border-zinc-700 rounded-md font-medium"
           >
             {threadFlows.map((tf, idx) => (
-              <option key={idx} value={idx}>
+              <option key={`thread-${tf.id || tf.message || idx}`} value={idx}>
                 {tf.message || tf.id || `Thread #${idx + 1}`}
               </option>
             ))}
@@ -87,19 +100,15 @@ const DataflowTimeline: React.FC<{
         const isSink = idx === steps.length - 1;
 
         return (
-          <React.Fragment key={idx}>
+          <React.Fragment key={`step-${step.filePath}-${step.line}-${idx}`}>
             <button
               type="button"
               onClick={() => onSelectStep(idx)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono transition-all cursor-pointer ${
-                isCurrent
-                  ? 'bg-blue-600 text-white shadow-sm font-bold scale-105'
-                  : isSource
-                  ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100'
-                  : isSink
-                  ? 'bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800 hover:bg-rose-100'
-                  : 'bg-white dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 border border-slate-200 dark:border-zinc-700 hover:bg-slate-50'
-              }`}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono transition-all cursor-pointer ${getTimelineStepClass(
+                isCurrent,
+                isSource,
+                isSink
+              )}`}
             >
               <span className="opacity-75">#{idx + 1}</span>
               <span className="truncate max-w-[120px] font-sans font-medium">
@@ -121,7 +130,7 @@ const DataflowStepDetail: React.FC<{
   currentStep?: NormalizedCodeFlowStep;
   safeStepIndex: number;
   totalSteps: number;
-}> = ({ currentStep, safeStepIndex, totalSteps }) => {
+  }> = ({ currentStep, safeStepIndex, totalSteps }) => {
   if (!currentStep) return null;
 
   return (

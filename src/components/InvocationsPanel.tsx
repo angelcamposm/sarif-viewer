@@ -76,7 +76,7 @@ const RunInvocationsSection: React.FC<{ run: SarifRunSummary }> = ({ run }) => (
     {run.invocations && run.invocations.length > 0 ? (
       <div className="space-y-3">
         {run.invocations.map((inv, invIdx) => (
-          <InvocationRecordCard key={invIdx} inv={inv} />
+          <InvocationRecordCard key={`inv-${inv.startTimeUtc || ''}-${invIdx}`} inv={inv} />
         ))}
       </div>
     ) : (
@@ -91,15 +91,19 @@ export const InvocationsPanel: React.FC<InvocationsPanelProps> = ({ report, isOp
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150">
-      <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-2xl border border-slate-200 dark:border-zinc-800 max-w-2xl w-full p-6 animate-in zoom-in-95 duration-150 text-slate-800 dark:text-zinc-100 flex flex-col max-h-[90vh] overflow-y-auto">
+    <dialog
+      open
+      aria-labelledby="invocations-panel-title"
+      className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 w-full h-full border-none max-w-none max-h-none overflow-hidden m-0"
+    >
+      <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-2xl border border-slate-200 dark:border-zinc-800 max-w-2xl w-full p-6 text-slate-800 dark:text-zinc-100 flex flex-col max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between pb-4 border-b border-slate-200 dark:border-zinc-800">
           <div className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-lg bg-slate-100 dark:bg-zinc-800 flex items-center justify-center text-slate-700 dark:text-zinc-300">
               <Terminal className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-base font-bold text-slate-900 dark:text-zinc-100">
+              <h3 id="invocations-panel-title" className="text-base font-bold text-slate-900 dark:text-zinc-100">
                 Tool Invocations & Diagnostics
               </h3>
               <p className="text-xs text-slate-500 dark:text-zinc-400">
@@ -117,8 +121,8 @@ export const InvocationsPanel: React.FC<InvocationsPanelProps> = ({ report, isOp
         </div>
 
         <div className="py-4 space-y-4 text-xs">
-          {report.runs.map((run, runIdx) => (
-            <RunInvocationsSection key={runIdx} run={run} />
+          {report.runs.map((run) => (
+            <RunInvocationsSection key={`run-${run.runIndex}-${run.toolName}`} run={run} />
           ))}
         </div>
 
@@ -132,6 +136,6 @@ export const InvocationsPanel: React.FC<InvocationsPanelProps> = ({ report, isOp
           </button>
         </div>
       </div>
-    </div>
+    </dialog>
   );
 };

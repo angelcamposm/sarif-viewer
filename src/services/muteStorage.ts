@@ -15,6 +15,19 @@ function notifyListeners(): void {
   });
 }
 
+function sanitizeMuteRecord(rec: MuteRecord): MuteRecord {
+  return {
+    id: String(rec.id || ''),
+    ruleId: String(rec.ruleId || ''),
+    reason: (rec.reason || 'Other') as MuteRecord['reason'],
+    justification: rec.justification ? String(rec.justification) : undefined,
+    mutedAt: String(rec.mutedAt || new Date().toISOString()),
+    mutedBy: rec.mutedBy ? String(rec.mutedBy) : undefined,
+    filePath: rec.filePath ? String(rec.filePath) : undefined,
+    line: typeof rec.line === 'number' ? rec.line : undefined,
+  };
+}
+
 function loadFromLocalStorage(): Record<string, MuteRecord> {
   try {
     if (typeof window === 'undefined' || !window.localStorage) return {};
@@ -32,7 +45,13 @@ function loadFromLocalStorage(): Record<string, MuteRecord> {
 function persistToLocalStorage(records: Record<string, MuteRecord>): void {
   try {
     if (typeof window === 'undefined' || !window.localStorage) return;
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+    const sanitized: Record<string, MuteRecord> = {};
+    for (const [k, v] of Object.entries(records)) {
+      if (v && typeof v === 'object') {
+        sanitized[String(k)] = sanitizeMuteRecord(v);
+      }
+    }
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(sanitized));
   } catch (e) {
     console.error('Failed to save muted alerts to localStorage', e);
   }
@@ -71,7 +90,8 @@ export const muteStorage = {
   },
 
   mute(record: MuteRecord): void {
-    const all = { ...this.getAll(), [record.id]: record };
+    const sanitized = sanitizeMuteRecord(record);
+    const all = { ...this.getAll(), [sanitized.id]: sanitized };
     memoryCache = all;
     persistToLocalStorage(all);
     notifyListeners();
@@ -111,7 +131,8 @@ export const muteStorage = {
     let importedCount = 0;
     for (const rec of records) {
       if (rec?.id && rec?.ruleId) {
-        all[rec.id] = rec;
+        const sanitized = sanitizeMuteRecord(rec);
+        all[sanitized.id] = sanitized;
         importedCount++;
       }
     }

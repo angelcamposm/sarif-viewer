@@ -1,6 +1,6 @@
 import DOMPurify from 'dompurify';
 
-const JSON_TOKEN_REGEX = /("(?:\\.|[^\\"])*"(?:\s*:)?|\btrue\b|\bfalse\b|\bnull\b|-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)/g;
+const JSON_TOKEN_REGEX = /"(?:\\.|[^"\\])*"(?:\s*:)?|\btrue\b|\bfalse\b|\bnull\b|-?\d+(?:\.\d+)?/g;
 
 /**
  * Syntax highlighter for JSON data structures.

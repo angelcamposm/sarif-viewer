@@ -29,6 +29,26 @@ interface FindingsTableProps {
   onViewRawSarif?: (finding: NormalizedFinding) => void;
 }
 
+function renderSortIcon(isCurrentSort: boolean, sortDirection: SortDirection) {
+  if (!isCurrentSort) {
+    return <ArrowUpDown className="w-3.5 h-3.5 text-slate-400 dark:text-zinc-500 opacity-0 group-hover/th:opacity-100 transition-opacity" />;
+  }
+  if (sortDirection === 'asc') {
+    return <ArrowUp className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 font-bold" />;
+  }
+  return <ArrowDown className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 font-bold" />;
+}
+
+function getFindingRowClass(isSelected: boolean, isMuted: boolean): string {
+  if (isSelected) {
+    return 'bg-blue-50/90 hover:bg-blue-50 dark:bg-zinc-800/90 dark:hover:bg-zinc-800 font-medium text-slate-900 dark:text-zinc-100 ring-1 ring-blue-200 dark:ring-zinc-600 inset-0';
+  }
+  if (isMuted) {
+    return 'bg-slate-50/50 dark:bg-zinc-950/40 hover:bg-slate-100/70 dark:hover:bg-zinc-800/60 text-slate-400 dark:text-zinc-500 opacity-75';
+  }
+  return 'hover:bg-slate-50/80 dark:hover:bg-zinc-800/60 text-slate-700 dark:text-zinc-300';
+}
+
 const TableSortHeaderCell: React.FC<{
   field: SortField;
   label: string;
@@ -46,13 +66,7 @@ const TableSortHeaderCell: React.FC<{
     >
       <div className="flex items-center justify-between gap-1">
         <span>{label}</span>
-        {!isCurrentSort ? (
-          <ArrowUpDown className="w-3.5 h-3.5 text-slate-400 dark:text-zinc-500 opacity-0 group-hover/th:opacity-100 transition-opacity" />
-        ) : sortDirection === 'asc' ? (
-          <ArrowUp className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 font-bold" />
-        ) : (
-          <ArrowDown className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 font-bold" />
-        )}
+        {renderSortIcon(isCurrentSort, sortDirection)}
       </div>
     </th>
   );
@@ -105,11 +119,7 @@ const FindingTableRow: React.FC<{
   onToggleMute: (f: NormalizedFinding) => void;
   onViewRawSarif?: (f: NormalizedFinding) => void;
 }> = ({ finding, isSelected, onSelect, onToggleMute, onViewRawSarif }) => {
-  const rowClass = isSelected
-    ? 'bg-blue-50/90 hover:bg-blue-50 dark:bg-zinc-800/90 dark:hover:bg-zinc-800 font-medium text-slate-900 dark:text-zinc-100 ring-1 ring-blue-200 dark:ring-zinc-600 inset-0'
-    : finding.isMuted
-    ? 'bg-slate-50/50 dark:bg-zinc-950/40 hover:bg-slate-100/70 dark:hover:bg-zinc-800/60 text-slate-400 dark:text-zinc-500 opacity-75'
-    : 'hover:bg-slate-50/80 dark:hover:bg-zinc-800/60 text-slate-700 dark:text-zinc-300';
+  const rowClass = getFindingRowClass(isSelected, !!finding.isMuted);
 
   return (
     <tr onClick={() => onSelect(finding)} className={`cursor-pointer transition-colors group ${rowClass}`}>

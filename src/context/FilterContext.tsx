@@ -33,7 +33,7 @@ function computeLevelOptions(report: ParsedSarifReport | null): LevelOption[] {
         .filter((f) => f.isLevelOverridden && f.overrideTag)
         .map((f) => f.overrideTag!)
     )
-  ).sort();
+  ).sort((a, b) => a.localeCompare(b));
 
   const overrideOptions: LevelOption[] = overrideTags.map((tag) => ({
     value: `override:${tag}`,
@@ -47,22 +47,22 @@ function computeLevelOptions(report: ParsedSarifReport | null): LevelOption[] {
 export const FilterProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { report, rawSarif } = useReport();
   const [prevReportKey, setPrevReportKey] = useState<string | undefined>(rawSarif?.filename);
-  const [filters, setFiltersState] = useState<FilterState>(initialFilters);
+  const [filters, setFilters] = useState<FilterState>(initialFilters);
   const [selectedFindingId, setSelectedFindingId] = useState<string | null>(null);
 
   // Synchronize state during render when active report changes
   if (rawSarif?.filename !== prevReportKey) {
     setPrevReportKey(rawSarif?.filename);
-    setFiltersState(initialFilters);
+    setFilters(initialFilters);
     setSelectedFindingId(null);
   }
 
-  const setFilters = useCallback((newFilters: Partial<FilterState>) => {
-    setFiltersState((prev) => ({ ...prev, ...newFilters }));
+  const updateFilters = useCallback((newFilters: Partial<FilterState>) => {
+    setFilters((prev) => ({ ...prev, ...newFilters }));
   }, []);
 
   const clearFilters = useCallback(() => {
-    setFiltersState(initialFilters);
+    setFilters(initialFilters);
   }, []);
 
   const levelOptions = useMemo(() => computeLevelOptions(report), [report]);
@@ -84,7 +84,7 @@ export const FilterProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   const value = useMemo(
     () => ({
       filters,
-      setFilters,
+      setFilters: updateFilters,
       clearFilters,
       filteredFindings,
       selectedFindingId,
@@ -94,7 +94,7 @@ export const FilterProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     }),
     [
       filters,
-      setFilters,
+      updateFilters,
       clearFilters,
       filteredFindings,
       selectedFindingId,

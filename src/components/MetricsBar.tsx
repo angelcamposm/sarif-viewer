@@ -10,12 +10,14 @@ import {
   BellOff,
 } from 'lucide-react';
 
+export type MuteFilterState = 'all' | 'active' | 'muted';
+
 interface MetricsBarProps {
   report: ParsedSarifReport;
   selectedLevel: string;
   onSelectLevel: (level: string) => void;
-  muteStatus?: 'all' | 'active' | 'muted';
-  onSelectMuteStatus?: (status: 'all' | 'active' | 'muted') => void;
+  muteStatus?: MuteFilterState;
+  onSelectMuteStatus?: (status: MuteFilterState) => void;
 }
 
 interface MetricItem {

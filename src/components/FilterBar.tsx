@@ -183,11 +183,7 @@ const FilterLevelDropdown: React.FC<{
   );
 };
 
-const FilterRuleDropdown: React.FC<{
-  selectedRule: string;
-  availableRules: Array<{ id: string; name?: string; count: number }>;
-  onSelectRule: (rule: string) => void;
-}> = ({ selectedRule, availableRules, onSelectRule }) => {
+function useSearchablePopover() {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
@@ -201,10 +197,20 @@ const FilterRuleDropdown: React.FC<{
     }
   };
 
+  return { open, setOpen, search, setSearch, inputRef, handleOpenChange };
+}
+
+const FilterRuleDropdown: React.FC<{
+  selectedRule: string;
+  availableRules: Array<{ id: string; name?: string; count: number }>;
+  onSelectRule: (ruleId: string) => void;
+}> = ({ selectedRule, availableRules, onSelectRule }) => {
+  const { open, setOpen, search, setSearch, inputRef, handleOpenChange } = useSearchablePopover();
+
   const filteredRules = availableRules.filter(
     (r) =>
       r.id.toLowerCase().includes(search.toLowerCase()) ||
-      (r.name && r.name.toLowerCase().includes(search.toLowerCase()))
+      r.name?.toLowerCase().includes(search.toLowerCase())
   );
 
   return (
@@ -298,23 +304,18 @@ const FilterRuleDropdown: React.FC<{
   );
 };
 
+function getMuteStatusLabel(status: string): string {
+  if (status === 'active') return 'Active only';
+  if (status === 'muted') return 'Muted only';
+  return 'All status';
+}
+
 const FilterTagDropdown: React.FC<{
   selectedTag: string;
   availableTags: Array<{ tag: string; count: number }>;
   onSelectTag: (tag: string) => void;
 }> = ({ selectedTag, availableTags, onSelectTag }) => {
-  const [open, setOpen] = useState(false);
-  const [search, setSearch] = useState('');
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  const handleOpenChange = (isOpen: boolean) => {
-    setOpen(isOpen);
-    if (!isOpen) {
-      setSearch('');
-    } else {
-      setTimeout(() => inputRef.current?.focus(), 50);
-    }
-  };
+  const { open, setOpen, search, setSearch, inputRef, handleOpenChange } = useSearchablePopover();
 
   const filteredTags = availableTags.filter((t) =>
     t.tag.toLowerCase().includes(search.toLowerCase())
@@ -435,7 +436,7 @@ const FilterMuteDropdown: React.FC<{
                 <SlidersHorizontal className="w-3.5 h-3.5 text-slate-400 shrink-0" />
               )}
               <span className="truncate">
-                {muteStatus === 'all' ? 'All status' : muteStatus === 'active' ? 'Active only' : 'Muted only'}
+                {getMuteStatusLabel(muteStatus)}
               </span>
             </span>
             <ChevronDown className={`w-3.5 h-3.5 text-slate-400 shrink-0 transition-transform duration-200 ${open ? 'rotate-180' : ''}`} />

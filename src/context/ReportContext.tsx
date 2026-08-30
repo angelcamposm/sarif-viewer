@@ -48,7 +48,7 @@ export const ReportProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     let mutedCount = 0;
     const updatedFindings = baseReport.findings.map((f) => {
       const muteRec = mutedRecords[f.id];
-      const isMuted = !!muteRec || (f.inSarifSuppressions && f.inSarifSuppressions.some((s) => s.status === 'accepted')) || false;
+      const isMuted = !!muteRec || f.inSarifSuppressions?.some((s) => s.status === 'accepted') || false;
       if (isMuted) mutedCount++;
 
       if (f.isMuted === isMuted && f.muteRecord === muteRec) {

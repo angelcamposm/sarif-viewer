@@ -18,9 +18,9 @@ function filterMutedRecords(records: MuteRecord[], query: string): MuteRecord[] 
   return records.filter(
     (r) =>
       r.ruleId.toLowerCase().includes(cleanQuery) ||
-      (r.filePath && r.filePath.toLowerCase().includes(cleanQuery)) ||
+      r.filePath?.toLowerCase().includes(cleanQuery) ||
       r.reason.toLowerCase().includes(cleanQuery) ||
-      (r.justification && r.justification.toLowerCase().includes(cleanQuery))
+      r.justification?.toLowerCase().includes(cleanQuery)
   );
 }
 
@@ -86,35 +86,37 @@ export const MuteManagerDialog: React.FC<MuteManagerDialogProps> = ({
     a.download = `sarif-muted-findings-${new Date().toISOString().slice(0, 10)}.json`;
     document.body.appendChild(a);
     a.click();
+    a.remove();
     URL.revokeObjectURL(url);
   };
 
-  const handleImportFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        try {
-          const parsed = JSON.parse(event.target?.result as string);
-          if (Array.isArray(parsed)) {
-            const count = muteStorage.import(parsed);
-            setStatusMessage(`Successfully imported ${count} muted suppression rule(s).`);
-            setTimeout(() => setStatusMessage(null), 3000);
-          } else {
-            alert('Invalid suppression file format: expected a JSON array.');
-          }
-        } catch {
-          alert('Failed to parse JSON file.');
+      try {
+        const text = await file.text();
+        const parsed = JSON.parse(text);
+        if (Array.isArray(parsed)) {
+          const count = muteStorage.import(parsed);
+          setStatusMessage(`Successfully imported ${count} muted suppression rule(s).`);
+          setTimeout(() => setStatusMessage(null), 3000);
+        } else {
+          alert('Invalid suppression file format: expected a JSON array.');
         }
-      };
-      reader.readAsText(file);
+      } catch {
+        alert('Failed to parse JSON file.');
+      }
     }
     e.target.value = '';
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150">
-      <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-2xl border border-slate-200 dark:border-zinc-800 max-w-2xl w-full p-6 animate-in zoom-in-95 duration-150 flex flex-col max-h-[85vh] text-slate-900 dark:text-zinc-100">
+    <dialog
+      open
+      aria-labelledby="mute-manager-title"
+      className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 w-full h-full border-none max-w-none max-h-none overflow-hidden m-0"
+    >
+      <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-2xl border border-slate-200 dark:border-zinc-800 max-w-2xl w-full p-6 flex flex-col max-h-[85vh] text-slate-900 dark:text-zinc-100">
         <input
           ref={fileInputRef}
           type="file"
@@ -129,7 +131,7 @@ export const MuteManagerDialog: React.FC<MuteManagerDialogProps> = ({
               <BellOff className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-base font-bold text-slate-900 dark:text-zinc-100">
+              <h2 id="mute-manager-title" className="text-base font-bold text-slate-900 dark:text-zinc-100">
                 Browser-Muted Findings Storage
               </h2>
               <p className="text-xs text-slate-500 dark:text-zinc-400">
@@ -226,6 +228,6 @@ export const MuteManagerDialog: React.FC<MuteManagerDialogProps> = ({
           </button>
         </div>
       </div>
-    </div>
+    </dialog>
   );
 };

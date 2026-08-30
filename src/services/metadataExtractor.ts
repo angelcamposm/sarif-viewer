@@ -52,7 +52,7 @@ function findPropertyCaseInsensitive(props: PropertyBag, keys: string[]): string
 function formatCustomPropertyKey(key: string): string {
   return key
     .replace(/([A-Z])/g, ' $1')
-    .replace(/_/g, ' ')
+    .replaceAll('_', ' ')
     .replace(/^./, (str) => str.toUpperCase())
     .trim();
 }
@@ -91,9 +91,9 @@ function extractCustomLabels(
 export function extractApplicationMetadata(run?: Run, globalProperties?: PropertyBag): ApplicationMetadata {
   const combinedProps: PropertyBag = {
     ...globalProperties,
-    ...(run?.tool?.driver?.properties || {}),
-    ...(run?.properties || {}),
-    ...(run?.automationDetails?.properties || {}),
+    ...run?.tool?.driver?.properties,
+    ...run?.properties,
+    ...run?.automationDetails?.properties,
   };
 
   const businessCriticality = findPropertyCaseInsensitive(combinedProps, [

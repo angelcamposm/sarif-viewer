@@ -8,11 +8,11 @@ export function matchesSearchQuery(finding: NormalizedFinding, rawQuery: string)
   if (!query) return true;
 
   if (finding.ruleId.toLowerCase().includes(query)) return true;
-  if (finding.ruleName && finding.ruleName.toLowerCase().includes(query)) return true;
+  if (finding.ruleName?.toLowerCase().includes(query)) return true;
   if (finding.message.toLowerCase().includes(query)) return true;
   if (finding.filePath.toLowerCase().includes(query)) return true;
   if (finding.effectiveLevel.toLowerCase().includes(query)) return true;
-  if (finding.overrideTag && finding.overrideTag.toLowerCase().includes(query)) return true;
+  if (finding.overrideTag?.toLowerCase().includes(query)) return true;
   if (finding.tags.some((t) => t.toLowerCase().includes(query))) return true;
 
   return false;

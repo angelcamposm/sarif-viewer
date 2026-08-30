@@ -29,8 +29,8 @@ export function renderSafeMarkdown(markdownText?: string): string {
   html = html.replace(/\*([^*]+)\*/g, '<em>$1</em>');
   html = html.replace(/_([^_]+)_/g, '<em>$1</em>');
 
-  // Markdown links: [text](url) - Linear complexity regex
-  html = html.replace(/\[([^\]\n]+)\]\((https?:\/\/[^)\s\n]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline inline-flex items-center gap-0.5">$1</a>');
+  // Markdown links: [text](url) - Linear complexity regex without duplicate character classes
+  html = html.replace(/\[([^\]\n]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline inline-flex items-center gap-0.5">$1</a>');
 
   // Line breaks
   html = html.replaceAll('\n', '<br/>');

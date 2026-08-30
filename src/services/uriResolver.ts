@@ -36,7 +36,7 @@ function normalizeArtifactUri(rawUri: string): string {
 
   const normalized = rawUri
     .replace(/^file:\/\/\/?/, '')
-    .replace(/\\/g, '/')
+    .replaceAll('\\', '/')
     .replace(/^\.\//, '')
     .replace(/^%SRCROOT%\/?/i, '')
     .replace(/^#src_dir#\/?/i, '')
@@ -52,7 +52,11 @@ function extractArtifactFileName(normalizedPath: string): string {
   if (normalizedPath === 'Not provided') {
     return 'Not provided';
   }
-  return normalizedPath.split('/').filter(Boolean).pop() || normalizedPath;
+  const lastSlashIndex = normalizedPath.lastIndexOf('/');
+  if (lastSlashIndex === -1) {
+    return normalizedPath;
+  }
+  return normalizedPath.slice(lastSlashIndex + 1) || normalizedPath;
 }
 
 /**
