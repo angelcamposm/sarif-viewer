@@ -1,6 +1,30 @@
 import DOMPurify from 'dompurify';
 
-const JSON_TOKEN_REGEX = /"(?:\\.|[^"\\])*":?|-?\d+(?:\.\d+)?|\b(?:true|false|null)\b/g;
+const STRING_OR_KEY_PATTERN = '"(?:\\\\.|[^"\\\\])*":?';
+const NUMBER_PATTERN = '-?\\d+(?:\\.\\d+)?';
+const KEYWORD_PATTERN = '\\b(?:true|false|null)\\b';
+
+const JSON_TOKEN_REGEX = new RegExp(
+  `${STRING_OR_KEY_PATTERN}|${NUMBER_PATTERN}|${KEYWORD_PATTERN}`,
+  'g'
+);
+
+function formatToken(match: string): string {
+  if (match.startsWith('"')) {
+    if (match.endsWith(':')) {
+      const keyName = match.slice(0, -1);
+      return `<span class="text-sky-300 font-semibold">${keyName}</span><span class="text-slate-400">:</span>`;
+    }
+    return `<span class="text-emerald-300">${match}</span>`;
+  }
+  if (match === 'true' || match === 'false') {
+    return `<span class="text-rose-400 font-bold">${match}</span>`;
+  }
+  if (match === 'null') {
+    return `<span class="text-purple-300 italic">${match}</span>`;
+  }
+  return `<span class="text-amber-300">${match}</span>`;
+}
 
 /**
  * Syntax highlighter for JSON data structures.
@@ -15,26 +39,7 @@ export function highlightJson(json: any): string {
     .replaceAll('<', '&lt;')
     .replaceAll('>', '&gt;');
 
-  // Tokenizer regex matching JSON keys, strings, numbers, booleans, and null
-  const html = escaped.replace(JSON_TOKEN_REGEX, (match) => {
-    let cls = 'text-amber-300'; // numbers
-    if (match.startsWith('"')) {
-      if (match.endsWith(':')) {
-        // JSON Object Key
-        const keyName = match.slice(0, -1);
-        return `<span class="text-sky-300 font-semibold">${keyName}</span><span class="text-slate-400">:</span>`;
-      }
-      // JSON String Value
-      cls = 'text-emerald-300';
-    } else if (match === 'true' || match === 'false') {
-      // Boolean
-      cls = 'text-rose-400 font-bold';
-    } else if (match === 'null') {
-      // Null
-      cls = 'text-purple-300 italic';
-    }
-    return `<span class="${cls}">${match}</span>`;
-  });
+  const html = escaped.replace(JSON_TOKEN_REGEX, formatToken);
 
   return DOMPurify.sanitize(html, {
     ALLOWED_TAGS: ['span'],
