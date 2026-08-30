@@ -3,6 +3,10 @@ import { NormalizedTaxonomyReference } from '../types/viewer';
 
 type CatalogMap = Map<string, { taxonName: string; taxa: Map<string, string> }>;
 
+const CWE_REGEX = /^CWE[-:\s]?(\d+)/i;
+const OWASP_REGEX = /^(?:OWASP[-:\s]?)?(A\d{2}[:\-\s]?\d{4}|A\d{2})/i;
+const DIGITS_REGEX = /\d+/;
+
 /**
  * Formats standard external taxonomy reference links (CWE, OWASP, NIST).
  */
@@ -11,7 +15,7 @@ function formatTaxonomyLink(taxonomyName: string, id: string): { canonicalId: st
   const rawClean = id.trim();
 
   if (upperTax.includes('CWE') || rawClean.toUpperCase().startsWith('CWE')) {
-    const match = rawClean.match(/\d+/);
+    const match = DIGITS_REGEX.exec(rawClean);
     if (match) {
       const num = match[0];
       return {
@@ -151,7 +155,7 @@ function resolveTaxonomiesFromTags(
     const upper = trimmed.toUpperCase();
 
     // Match CWE patterns: "cwe-89", "CWE:89", "cwe-79: cross-site scripting"
-    const cweMatch = upper.match(/^CWE[-:\s]?(\d+)/i);
+    const cweMatch = CWE_REGEX.exec(upper);
     if (cweMatch) {
       const cweNumber = cweMatch[1];
       const canonicalId = `CWE-${cweNumber}`;
@@ -166,9 +170,9 @@ function resolveTaxonomiesFromTags(
     }
 
     // Match OWASP patterns: "OWASP-A01:2021", "A03-2021", "owasp-top-10"
-    const owaspMatch = upper.match(/^(?:OWASP[-:\s]?)?(A\d{2}[:\-\s]?\d{4}|A\d{2})/i);
+    const owaspMatch = OWASP_REGEX.exec(upper);
     if (owaspMatch) {
-      const canonicalId = owaspMatch[1].replace(/[-_]/g, ':');
+      const canonicalId = owaspMatch[1].replaceAll('-', ':').replaceAll('_', ':');
       const key = `OWASP:${canonicalId}`;
       if (!resolvedMap.has(key)) {
         resolvedMap.set(key, {

@@ -27,11 +27,11 @@ export class ErrorBoundary extends Component<Props, State> {
     this.setState({ errorInfo });
   }
 
-  private handleReload = () => {
+  private readonly handleReload = () => {
     window.location.reload();
   };
 
-  private handleResetAll = () => {
+  private readonly handleResetAll = () => {
     try {
       if (typeof window !== 'undefined') {
         localStorage.clear();

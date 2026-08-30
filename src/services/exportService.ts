@@ -12,7 +12,7 @@ function triggerDownload(content: string, filename: string, mimeType: string): v
   anchor.download = filename;
   document.body.appendChild(anchor);
   anchor.click();
-  document.body.removeChild(anchor);
+  anchor.remove();
   URL.revokeObjectURL(url);
 }
 
@@ -119,15 +119,26 @@ function buildMarkdownApplicationDetails(metadata: ApplicationMetadata): string 
  * Formats a single finding as a Markdown section.
  */
 function buildMarkdownFindingEntry(f: NormalizedFinding, index: number): string {
-  let md = `### ${index + 1}. [${f.effectiveLevel.toUpperCase()}] ${f.ruleId}: ${f.ruleName || f.message.substring(0, 60)}\n\n`;
-  md += `- **Location**: \`${f.filePath}${f.line ? `:${f.line}` : ''}\`\n`;
-  md += `- **Tool**: ${f.toolName} ${f.toolVersion || ''}\n`;
+  const levelUpper = f.effectiveLevel.toUpperCase();
+  const title = f.ruleName || f.message.substring(0, 60);
+  const locationSuffix = f.line ? `:${f.line}` : '';
+  const toolVersionStr = f.toolVersion ? ` ${f.toolVersion}` : '';
+
+  let md = `### ${index + 1}. [${levelUpper}] ${f.ruleId}: ${title}\n\n`;
+  md += `- **Location**: \`${f.filePath}${locationSuffix}\`\n`;
+  md += `- **Tool**: ${f.toolName}${toolVersionStr}\n`;
 
   if (f.taxonomies && f.taxonomies.length > 0) {
-    md += `- **Standards**: ${f.taxonomies.map((t) => `\`${t.id}\``).join(', ')}\n`;
+    const taxList = f.taxonomies.map((t) => `\`${t.id}\``).join(', ');
+    md += `- **Standards**: ${taxList}\n`;
   }
-  if (f.tags.length > 0) md += `- **Tags**: \`${f.tags.join('`, `')}\`\n`;
-  if (f.isMuted) md += `- **Mute Status**: 🔇 Muted (${f.muteRecord?.reason || 'Suppressed'})\n`;
+  if (f.tags.length > 0) {
+    md += `- **Tags**: \`${f.tags.join('`, `')}\`\n`;
+  }
+  if (f.isMuted) {
+    const muteReason = f.muteRecord?.reason || 'Suppressed';
+    md += `- **Mute Status**: 🔇 Muted (${muteReason})\n`;
+  }
 
   if (f.codeFlows && f.codeFlows.length > 0) {
     const stepCount = f.codeFlows[0].threadFlows[0]?.steps.length || 0;
@@ -137,7 +148,7 @@ function buildMarkdownFindingEntry(f: NormalizedFinding, index: number): string 
     md += `- **Automated Fix**: 🔧 ${f.fixes.length} remediation patch(es) available\n`;
   }
 
-  md += `\n**Message**:\n> ${f.message.replace(/\n/g, '\n> ')}\n\n`;
+  md += `\n**Message**:\n> ${f.message.replaceAll('\n', '\n> ')}\n\n`;
   if (f.ruleDescription) {
     md += `**Rule Description**:\n${f.ruleDescription}\n\n`;
   }

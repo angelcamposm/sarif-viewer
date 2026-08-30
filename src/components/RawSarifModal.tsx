@@ -43,19 +43,18 @@ export const RawSarifModal: React.FC<RawSarifModalProps> = ({
     a.download = `sarif-finding-${finding.ruleId}-${finding.id}.json`;
     document.body.appendChild(a);
     a.click();
-    document.body.removeChild(a);
+    a.remove();
     URL.revokeObjectURL(url);
   };
 
   return (
     <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="raw-sarif-title"
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200"
-      onClick={onClose}
     >
-      <div
-        className="bg-white dark:bg-zinc-900 rounded-xl shadow-2xl border border-slate-200 dark:border-zinc-800 max-w-3xl w-full flex flex-col max-h-[85vh] overflow-hidden text-slate-900 dark:text-zinc-100"
-        onClick={(e) => e.stopPropagation()}
-      >
+      <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-2xl border border-slate-200 dark:border-zinc-800 max-w-3xl w-full flex flex-col max-h-[85vh] overflow-hidden text-slate-900 dark:text-zinc-100">
         {/* Modal Header */}
         <div className="px-6 py-4 border-b border-slate-200 dark:border-zinc-800 flex items-center justify-between bg-slate-50/75 dark:bg-zinc-950/80">
           <div className="flex items-center gap-3">
@@ -63,7 +62,7 @@ export const RawSarifModal: React.FC<RawSarifModalProps> = ({
               <Code2 className="w-5 h-5 text-emerald-400" />
             </div>
             <div>
-              <h2 className="text-base font-bold text-slate-900 dark:text-zinc-100 flex items-center gap-2">
+              <h2 id="raw-sarif-title" className="text-base font-bold text-slate-900 dark:text-zinc-100 flex items-center gap-2">
                 <span>Raw SARIF Result</span>
                 <span className="text-xs font-mono font-medium px-2 py-0.5 rounded bg-slate-200 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300">
                   {finding.ruleId}
@@ -84,12 +83,12 @@ export const RawSarifModal: React.FC<RawSarifModalProps> = ({
           </button>
         </div>
 
-        {/* Modal Body: Syntax Highlighted Code Viewer with Line Numbers (Single global scrollbar at bottom) */}
+        {/* Modal Body: Syntax Highlighted Code Viewer with Line Numbers */}
         <div className="p-4 overflow-auto flex-1 bg-slate-950 dark:bg-black text-slate-100 font-mono text-xs leading-5">
           <div className="min-w-max">
             {highlightedLines.map((lineHtml, idx) => (
               <div
-                key={idx}
+                key={`line-${idx + 1}-${lineHtml.length}`}
                 className="flex items-start hover:bg-slate-900/90 dark:hover:bg-zinc-900/90 px-1 py-0.5 rounded-xs transition-colors group"
               >
                 <span className="w-10 shrink-0 text-right pr-4 text-slate-600 dark:text-zinc-600 select-none font-mono text-[11px] group-hover:text-slate-400 dark:group-hover:text-zinc-400">

@@ -7,7 +7,7 @@ describe('Taxonomy Resolver Service', () => {
     const tags = ['security', 'cwe-79', 'database'];
 
     const resolved = resolveTaxonomies(taxaRefs, [], [], tags);
-    expect(resolved.length).toBe(2);
+    expect(resolved).toHaveLength(2);
 
     const cwe89 = resolved.find((t) => t.id === 'CWE-89');
     expect(cwe89).toBeDefined();
@@ -43,7 +43,7 @@ describe('Taxonomy Resolver Service', () => {
     const taxaRefs = [{ id: 'CWE-89', toolComponent: { name: 'CWE' } }];
     const resolved = resolveTaxonomies(taxaRefs, catalog, [], []);
 
-    expect(resolved.length).toBe(1);
+    expect(resolved).toHaveLength(1);
     expect(resolved[0].name).toBe('Improper Neutralization of Special Elements used in an SQL Command');
   });
 });

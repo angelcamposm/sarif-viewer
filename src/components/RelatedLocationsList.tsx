@@ -34,7 +34,7 @@ export const RelatedLocationsList: React.FC<RelatedLocationsListProps> = ({ rela
       <div className="p-3.5 space-y-2.5">
         {relatedLocations.map((loc, idx) => (
           <div
-            key={idx}
+            key={loc.id !== undefined ? `loc-id-${loc.id}` : `loc-${loc.filePath}-${loc.line}-${idx}`}
             className="p-3 bg-white dark:bg-zinc-900 rounded-lg border border-slate-200 dark:border-zinc-800 space-y-2"
           >
             <div className="flex items-center justify-between gap-2 text-xs font-mono">

@@ -26,29 +26,21 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
     setIsDragging(false);
   };
 
-  const handleDrop = (e: React.DragEvent) => {
+  const handleDrop = async (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
     const file = e.dataTransfer.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const text = event.target?.result as string;
-        onFileLoaded(text, file.name);
-      };
-      reader.readAsText(file);
+      const text = await file.text();
+      onFileLoaded(text, file.name);
     }
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const text = event.target?.result as string;
-        onFileLoaded(text, file.name);
-      };
-      reader.readAsText(file);
+      const text = await file.text();
+      onFileLoaded(text, file.name);
     }
     e.target.value = '';
   };

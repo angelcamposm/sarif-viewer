@@ -43,7 +43,7 @@ export const FixDiffViewer: React.FC<FixDiffViewerProps> = ({ fixes, originalSni
 
       <div className="p-4 space-y-4">
         {fixes.map((fix, fixIdx) => (
-          <div key={fixIdx} className="space-y-3">
+          <div key={`fix-${fix.description || fixIdx}`} className="space-y-3">
             {fix.description && (
               <div className="p-2.5 bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/60 rounded-lg text-xs text-emerald-900 dark:text-emerald-200 font-medium">
                 {fix.description}
@@ -51,7 +51,7 @@ export const FixDiffViewer: React.FC<FixDiffViewerProps> = ({ fixes, originalSni
             )}
 
             {fix.artifactChanges.map((change, changeIdx) => (
-              <div key={changeIdx} className="space-y-2">
+              <div key={`change-${change.filePath}-${changeIdx}`} className="space-y-2">
                 <div className="flex items-center justify-between text-xs text-slate-600 dark:text-zinc-300 font-mono">
                   <div className="flex items-center gap-1.5">
                     <FileCode className="w-3.5 h-3.5 text-slate-400" />
@@ -63,7 +63,7 @@ export const FixDiffViewer: React.FC<FixDiffViewerProps> = ({ fixes, originalSni
                   const isCopied = copiedIndex === fixIdx * 100 + repIdx;
                   return (
                     <div
-                      key={repIdx}
+                      key={`rep-${rep.deletedRegion.startLine}-${rep.deletedRegion.endLine}-${repIdx}`}
                       className="bg-slate-900 dark:bg-black rounded-lg border border-slate-800 overflow-hidden font-mono text-xs shadow-2xs"
                     >
                       <div className="px-3 py-1.5 bg-slate-800/90 dark:bg-zinc-900/90 border-b border-slate-700/50 flex items-center justify-between text-[11px] text-slate-400">

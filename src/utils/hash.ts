@@ -6,7 +6,7 @@ export function generateDeterministicHash(parts: (string | number | undefined | 
   const str = parts.map((p) => (p !== undefined && p !== null ? String(p) : '')).join('::');
   let hash = 5381;
   for (let i = 0; i < str.length; i++) {
-    hash = (hash * 33) ^ str.charCodeAt(i);
+    hash = (hash * 33) ^ (str.codePointAt(i) ?? 0);
   }
   // Convert to 32-bit unsigned hex string
   const hex = (hash >>> 0).toString(16).padStart(8, '0');

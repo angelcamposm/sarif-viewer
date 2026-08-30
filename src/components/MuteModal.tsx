@@ -27,10 +27,11 @@ const MuteFormFields: React.FC<{
 }> = ({ reason, setReason, justification, setJustification, author, setAuthor }) => (
   <>
     <div>
-      <label className="block text-[11px] font-semibold text-slate-700 dark:text-zinc-300 mb-1">
+      <label htmlFor="mute-reason-select" className="block text-[11px] font-semibold text-slate-700 dark:text-zinc-300 mb-1">
         Suppression Reason
       </label>
       <select
+        id="mute-reason-select"
         value={reason}
         onChange={(e) => setReason(e.target.value as any)}
         className="w-full p-2 border border-slate-300 dark:border-zinc-700 rounded-md focus:ring-2 focus:ring-blue-500 text-xs bg-white dark:bg-zinc-800 text-slate-800 dark:text-zinc-200 cursor-pointer"
@@ -44,10 +45,11 @@ const MuteFormFields: React.FC<{
     </div>
 
     <div>
-      <label className="block text-[11px] font-semibold text-slate-700 dark:text-zinc-300 mb-1">
+      <label htmlFor="mute-justification-input" className="block text-[11px] font-semibold text-slate-700 dark:text-zinc-300 mb-1">
         Justification / Notes (Optional)
       </label>
       <textarea
+        id="mute-justification-input"
         value={justification}
         onChange={(e) => setJustification(e.target.value)}
         placeholder="Explain why this finding is suppressed for audit compliance..."
@@ -57,10 +59,11 @@ const MuteFormFields: React.FC<{
     </div>
 
     <div>
-      <label className="block text-[11px] font-semibold text-slate-700 dark:text-zinc-300 mb-1">
+      <label htmlFor="mute-reviewer-input" className="block text-[11px] font-semibold text-slate-700 dark:text-zinc-300 mb-1">
         Reviewer
       </label>
       <input
+        id="mute-reviewer-input"
         type="text"
         value={author}
         onChange={(e) => setAuthor(e.target.value)}

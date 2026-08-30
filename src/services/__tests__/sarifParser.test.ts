@@ -150,7 +150,7 @@ describe('SARIF Parser & Normalizer', () => {
     const finding = report.findings[0];
     const lowerTags = finding.tags.map((t) => t.toLowerCase());
     const uniqueLowerTags = Array.from(new Set(lowerTags));
-    expect(finding.tags.length).toBe(uniqueLowerTags.length);
+    expect(finding.tags).toHaveLength(uniqueLowerTags.length);
     expect(finding.tags).toEqual(['cwe-89', 'custom-tag', 'security', 'database']);
   });
 });

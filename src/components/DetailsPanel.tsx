@@ -113,7 +113,7 @@ const MuteBanners: React.FC<{ finding: NormalizedFinding }> = ({ finding }) => (
           <span>In-SARIF Tool Suppression</span>
         </div>
         {finding.inSarifSuppressions.map((sup, sIdx) => (
-          <div key={sIdx} className="text-xs text-blue-800 dark:text-blue-300">
+          <div key={`${sup.kind}-${sup.status}-${sIdx}`} className="text-xs text-blue-800 dark:text-blue-300">
             <span className="font-semibold uppercase tracking-wider text-[10px] px-1.5 py-0.2 bg-blue-100 dark:bg-blue-900/60 rounded mr-1.5">
               {sup.kind} ({sup.status})
             </span>
@@ -171,8 +171,8 @@ const FindingOverviewSection: React.FC<{ finding: NormalizedFinding; uniqueTags:
       <div>
         <div className="text-xs text-slate-500 dark:text-zinc-400 font-medium mb-1.5">Security Standards & Taxonomies</div>
         <div className="flex flex-wrap gap-1.5 py-1">
-          {finding.taxonomies.map((tax, idx) => (
-            <TaxonomyBadge key={idx} taxonomy={tax} />
+          {finding.taxonomies.map((tax) => (
+            <TaxonomyBadge key={`${tax.taxonomyName}:${tax.id}`} taxonomy={tax} />
           ))}
         </div>
       </div>
@@ -332,7 +332,7 @@ const CustomPropertiesSection: React.FC<{ properties?: Record<string, any> }> = 
       <div className="space-y-1.5 bg-slate-50 dark:bg-zinc-950/60 p-3 rounded-md border border-slate-200 dark:border-zinc-800">
         {customProperties.map(([key, val]) => (
           <div key={key} className="flex items-baseline justify-between gap-3 text-xs">
-            <span className="text-slate-500 dark:text-zinc-400 capitalize">{key.replace(/_/g, ' ')}:</span>
+            <span className="text-slate-500 dark:text-zinc-400 capitalize">{key.replaceAll('_', ' ')}:</span>
             <span className="font-mono text-slate-800 dark:text-zinc-200 font-medium truncate max-w-[220px]" title={String(val)}>
               {String(val)}
             </span>

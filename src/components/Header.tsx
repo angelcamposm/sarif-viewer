@@ -227,15 +227,11 @@ export const Header: React.FC<HeaderProps> = ({
   const [showExportMenu, setShowExportMenu] = useState(false);
   const [showInfoModal, setShowInfoModal] = useState(false);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const text = event.target?.result as string;
-        onFileLoaded(text, file.name);
-      };
-      reader.readAsText(file);
+      const text = await file.text();
+      onFileLoaded(text, file.name);
     }
     e.target.value = '';
   };

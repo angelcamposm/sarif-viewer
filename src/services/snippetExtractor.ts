@@ -13,9 +13,9 @@ function findTargetArtifact(
   }
 
   if (filePath) {
-    const cleanTarget = filePath.toLowerCase().replace(/\\/g, '/');
+    const cleanTarget = filePath.toLowerCase().replaceAll('\\', '/');
     return artifacts.find((a) => {
-      const uri = a.location?.uri?.toLowerCase().replace(/\\/g, '/');
+      const uri = a.location?.uri?.toLowerCase().replaceAll('\\', '/');
       return uri && (uri.endsWith(cleanTarget) || cleanTarget.endsWith(uri));
     });
   }
