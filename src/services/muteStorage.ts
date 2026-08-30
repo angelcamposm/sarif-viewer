@@ -54,9 +54,7 @@ if (typeof window !== 'undefined') {
  */
 export const muteStorage = {
   getAll(): Record<string, MuteRecord> {
-    if (memoryCache === null) {
-      memoryCache = loadFromLocalStorage();
-    }
+    memoryCache ??= loadFromLocalStorage();
     return memoryCache;
   },
 
@@ -112,7 +110,7 @@ export const muteStorage = {
     const all = { ...this.getAll() };
     let importedCount = 0;
     for (const rec of records) {
-      if (rec && rec.id && rec.ruleId) {
+      if (rec?.id && rec?.ruleId) {
         all[rec.id] = rec;
         importedCount++;
       }

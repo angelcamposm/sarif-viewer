@@ -33,26 +33,26 @@ describe('FilterContext Provider', () => {
       result.current.report.loadFile(JSON.stringify(sample.data), sample.filename);
     });
 
-    expect(result.current.filters.filteredFindings.length).toBe(2);
+    expect(result.current.filters.filteredFindings).toHaveLength(2);
 
     // Filter by text search
     act(() => {
       result.current.filters.setFilters({ searchQuery: 'sql-injection' });
     });
-    expect(result.current.filters.filteredFindings.length).toBe(1);
+    expect(result.current.filters.filteredFindings).toHaveLength(1);
     expect(result.current.filters.filteredFindings[0].ruleId).toBe('java/sql-injection');
 
     // Filter by level
     act(() => {
       result.current.filters.setFilters({ searchQuery: '', selectedLevel: 'warning' });
     });
-    expect(result.current.filters.filteredFindings.length).toBe(1);
+    expect(result.current.filters.filteredFindings).toHaveLength(1);
     expect(result.current.filters.filteredFindings[0].ruleId).toBe('java/path-injection');
 
     // Clear filters
     act(() => {
       result.current.filters.clearFilters();
     });
-    expect(result.current.filters.filteredFindings.length).toBe(2);
+    expect(result.current.filters.filteredFindings).toHaveLength(2);
   });
 });

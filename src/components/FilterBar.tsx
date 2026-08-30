@@ -93,9 +93,9 @@ const FilterLevelDropdown: React.FC<{
 
   return (
     <div className="w-full sm:w-48">
-      <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400 mb-1.5">
+      <span className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400 mb-1.5">
         Level
-      </label>
+      </span>
       <Popover.Root open={open} onOpenChange={setOpen}>
         <Popover.Trigger asChild>
           <button
@@ -209,9 +209,9 @@ const FilterRuleDropdown: React.FC<{
 
   return (
     <div className="w-full sm:w-56">
-      <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400 mb-1.5">
+      <span className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400 mb-1.5">
         Rule
-      </label>
+      </span>
       <Popover.Root open={open} onOpenChange={handleOpenChange}>
         <Popover.Trigger asChild>
           <button
@@ -322,9 +322,9 @@ const FilterTagDropdown: React.FC<{
 
   return (
     <div className="w-full sm:w-48">
-      <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400 mb-1.5">
+      <span className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400 mb-1.5">
         Tag
-      </label>
+      </span>
       <Popover.Root open={open} onOpenChange={handleOpenChange}>
         <Popover.Trigger asChild>
           <button
@@ -415,9 +415,9 @@ const FilterMuteDropdown: React.FC<{
 
   return (
     <div className="w-full sm:w-44">
-      <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400 mb-1.5">
+      <span className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400 mb-1.5">
         Mute Status
-      </label>
+      </span>
       <Popover.Root open={open} onOpenChange={setOpen}>
         <Popover.Trigger asChild>
           <button

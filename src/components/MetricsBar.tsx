@@ -46,14 +46,8 @@ const MetricCard: React.FC<{ item: MetricItem }> = ({ item }) => {
     labelClass = 'text-amber-700 dark:text-amber-400';
   }
 
-  return (
-    <div
-      onClick={item.onClick}
-      className={`p-4 rounded-lg border transition-all flex items-center gap-3 ${
-        isClickable ? 'cursor-pointer hover:shadow-2xs' : 'cursor-default'
-      } ${cardClass}`}
-      title={isClickable ? `Click to filter by ${item.label}` : undefined}
-    >
+  const content = (
+    <>
       <div className={`w-12 h-12 rounded-lg flex items-center justify-center shrink-0 ${item.iconBg}`}>
         {item.icon}
       </div>
@@ -66,6 +60,27 @@ const MetricCard: React.FC<{ item: MetricItem }> = ({ item }) => {
           {item.count}
         </div>
       </div>
+    </>
+  );
+
+  if (isClickable) {
+    return (
+      <button
+        type="button"
+        onClick={item.onClick}
+        className={`p-4 rounded-lg border transition-all flex items-center gap-3 text-left cursor-pointer hover:shadow-2xs ${cardClass}`}
+        title={`Click to filter by ${item.label}`}
+      >
+        {content}
+      </button>
+    );
+  }
+
+  return (
+    <div
+      className={`p-4 rounded-lg border transition-all flex items-center gap-3 cursor-default ${cardClass}`}
+    >
+      {content}
     </div>
   );
 };

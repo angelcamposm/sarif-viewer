@@ -9,12 +9,12 @@ export function useTheme(): {
   toggleTheme: () => void;
   setTheme: (theme: Theme) => void;
 } {
-  const [theme, setThemeState] = useState<Theme>(() => {
+  const [theme, setTheme] = useState<Theme>(() => {
     try {
       if (typeof window !== 'undefined') {
         const savedTheme = localStorage.getItem(THEME_STORAGE_KEY) as Theme | null;
         if (savedTheme === 'light' || savedTheme === 'dark') return savedTheme;
-        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)')?.matches) {
+        if (window.matchMedia?.('(prefers-color-scheme: dark)')?.matches) {
           return 'dark';
         }
       }
@@ -38,12 +38,12 @@ export function useTheme(): {
   }, [theme]);
 
   const toggleTheme = useCallback(() => {
-    setThemeState((prev) => (prev === 'dark' ? 'light' : 'dark'));
+    setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
   }, []);
 
-  const setTheme = useCallback((newTheme: Theme) => {
-    setThemeState(newTheme);
+  const updateTheme = useCallback((newTheme: Theme) => {
+    setTheme(newTheme);
   }, []);
 
-  return { theme, toggleTheme, setTheme };
+  return { theme, toggleTheme, setTheme: updateTheme };
 }

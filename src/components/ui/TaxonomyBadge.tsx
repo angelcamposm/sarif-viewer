@@ -6,15 +6,25 @@ interface TaxonomyBadgeProps {
   taxonomy: NormalizedTaxonomyReference;
 }
 
-export const TaxonomyBadge: React.FC<TaxonomyBadgeProps> = ({ taxonomy }) => {
-  const isCwe = taxonomy.taxonomyName.toUpperCase().includes('CWE') || taxonomy.id.toUpperCase().startsWith('CWE');
-  const isOwasp = taxonomy.taxonomyName.toUpperCase().includes('OWASP') || taxonomy.id.toUpperCase().startsWith('A0') || taxonomy.id.toUpperCase().startsWith('A1');
+function getTaxonomyBadgeStyle(taxonomy: NormalizedTaxonomyReference): string {
+  const upperTax = taxonomy.taxonomyName.toUpperCase();
+  const upperId = taxonomy.id.toUpperCase();
 
-  const badgeStyle = isCwe
-    ? 'bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800/80 hover:bg-blue-100 dark:hover:bg-blue-900/60'
-    : isOwasp
-    ? 'bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800/80 hover:bg-purple-100 dark:hover:bg-purple-900/60'
-    : 'bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 border-slate-200 dark:border-zinc-700 hover:bg-slate-200 dark:hover:bg-zinc-700';
+  const isCwe = upperTax.includes('CWE') || upperId.startsWith('CWE');
+  if (isCwe) {
+    return 'bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800/80 hover:bg-blue-100 dark:hover:bg-blue-900/60';
+  }
+
+  const isOwasp = upperTax.includes('OWASP') || upperId.startsWith('A0') || upperId.startsWith('A1');
+  if (isOwasp) {
+    return 'bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800/80 hover:bg-purple-100 dark:hover:bg-purple-900/60';
+  }
+
+  return 'bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 border-slate-200 dark:border-zinc-700 hover:bg-slate-200 dark:hover:bg-zinc-700';
+}
+
+export const TaxonomyBadge: React.FC<TaxonomyBadgeProps> = ({ taxonomy }) => {
+  const badgeStyle = getTaxonomyBadgeStyle(taxonomy);
 
   if (taxonomy.url) {
     return (

@@ -496,8 +496,8 @@ function normalizeSingleResult(
     tags,
     taxonomies,
     properties: {
-      ...(matchedRule?.properties || {}),
-      ...(result.properties || {}),
+      ...matchedRule?.properties,
+      ...result.properties,
     },
     isMuted,
     muteRecord: muteRec,
