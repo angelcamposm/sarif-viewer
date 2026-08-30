@@ -329,7 +329,7 @@ export const App: React.FC = () => {
   const totalMutedCount = Object.keys(mutedRecords).length;
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#f8fafc] dark:bg-[#09090b] text-slate-900 dark:text-zinc-100 selection:bg-blue-100 dark:selection:bg-zinc-800 dark:selection:text-white font-sans transition-colors duration-200">
+    <div className="min-h-screen flex flex-col bg-[#f8fafc] dark:bg-zinc-900 text-slate-900 dark:text-zinc-100 selection:bg-blue-100 dark:selection:bg-zinc-800 dark:selection:text-white font-sans transition-colors duration-200">
       {!report ? (
         <EmptyState
           onFileLoaded={handleFileLoaded}
@@ -373,7 +373,7 @@ export const App: React.FC = () => {
             />
 
             {/* Two-Column Workspace Layout */}
-            <div className="bg-white grid grid-cols-1 lg:grid-cols-12 gap-5 items-start  px-4 sm:px-6 lg:px-8 py-5">
+            <div className="bg-white dark:bg-zinc-900 grid grid-cols-1 lg:grid-cols-12 gap-5 items-start  px-4 sm:px-6 lg:px-8 py-5">
               {/* Left Column: Interactive Sortable Findings Table */}
               <div className="lg:col-span-7 xl:col-span-7 flex flex-col">
                 <FindingsTable
