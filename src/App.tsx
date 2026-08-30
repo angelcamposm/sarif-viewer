@@ -127,10 +127,10 @@ export const App: React.FC = () => {
   const levelOptions: LevelOption[] = useMemo(() => {
     const baseOptions: LevelOption[] = [
       { value: 'all', label: 'All levels' },
-      { value: 'error', label: 'Errors (Baseline / Effective)' },
-      { value: 'warning', label: 'Warnings (Baseline / Effective)' },
-      { value: 'note', label: 'Notes (Baseline / Effective)' },
-      { value: 'none', label: 'None (Baseline / Effective)' },
+      { value: 'error', label: 'Errors' },
+      { value: 'warning', label: 'Warnings' },
+      { value: 'note', label: 'Notes' },
+      { value: 'none', label: 'None' },
     ];
 
     if (!report) return baseOptions;
