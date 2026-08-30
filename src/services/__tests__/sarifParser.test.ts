@@ -110,7 +110,7 @@ describe('SARIF Parser & Normalizer', () => {
       mutedAt: new Date().toISOString(),
     });
 
-    const reportAfterMute = parseSarifJson(sample.data, sample.filename);
+    const reportAfterMute = parseSarifJson(sample.data, sample.filename, muteStorage.getAll());
     expect(reportAfterMute.findings[0].isMuted).toBe(true);
     expect(reportAfterMute.findings[0].muteRecord?.reason).toBe('False Positive');
   });

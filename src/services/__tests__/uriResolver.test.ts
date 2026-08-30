@@ -28,4 +28,17 @@ describe('URI & Path Resolver Service', () => {
     expect(result.filePath).toBe('services/auth.ts');
     expect(result.fileName).toBe('auth.ts');
   });
+
+  it('resolves chained uriBaseId hierarchies', () => {
+    const artifactLoc = { uri: 'handler.go', uriBaseId: 'MODULE' };
+    const originalUriBaseIds = {
+      REPO_ROOT: { uri: 'file:///workspace/repo/' },
+      SRC_DIR: { uri: 'src/backend/', uriBaseId: 'REPO_ROOT' },
+      MODULE: { uri: 'api/', uriBaseId: 'SRC_DIR' },
+    };
+
+    const result = resolveArtifactPath(artifactLoc, originalUriBaseIds);
+    expect(result.filePath).toBe('workspace/repo/src/backend/api/handler.go');
+    expect(result.fileName).toBe('handler.go');
+  });
 });

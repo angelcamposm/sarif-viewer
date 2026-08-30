@@ -1,6 +1,61 @@
 import { ArtifactLocation } from '../types/sarif';
 
 /**
+ * Traverses chained uriBaseId hierarchies in originalUriBaseIds.
+ */
+function resolveChainedUriPrefix(
+  initialUriBaseId?: string,
+  originalUriBaseIds?: Record<string, ArtifactLocation>
+): string {
+  if (!initialUriBaseId || !originalUriBaseIds) {
+    return '';
+  }
+
+  let currentUriBaseId: string | undefined = initialUriBaseId;
+  const visited = new Set<string>();
+  let accumulatedPrefix = '';
+
+  while (currentUriBaseId && originalUriBaseIds[currentUriBaseId] && !visited.has(currentUriBaseId)) {
+    visited.add(currentUriBaseId);
+    const base: ArtifactLocation | undefined = originalUriBaseIds[currentUriBaseId];
+    if (base?.uri) {
+      const baseUri = base.uri.endsWith('/') ? base.uri : `${base.uri}/`;
+      accumulatedPrefix = `${baseUri}${accumulatedPrefix}`;
+    }
+    currentUriBaseId = base?.uriBaseId;
+  }
+
+  return accumulatedPrefix;
+}
+
+/**
+ * Normalizes an artifact URI string by stripping schemes, standardizing slashes, and removing macro placeholders.
+ */
+function normalizeArtifactUri(rawUri: string): string {
+  if (!rawUri) return 'Not provided';
+
+  const normalized = rawUri
+    .replace(/^file:\/\/\/?/, '')
+    .replace(/\\/g, '/')
+    .replace(/^\.\//, '')
+    .replace(/^%SRCROOT%\/?/i, '')
+    .replace(/^#src_dir#\/?/i, '')
+    .replace(/^%WORKSPACE%\/?/i, '');
+
+  return normalized || 'Not provided';
+}
+
+/**
+ * Extracts the file basename from a normalized path string.
+ */
+function extractArtifactFileName(normalizedPath: string): string {
+  if (normalizedPath === 'Not provided') {
+    return 'Not provided';
+  }
+  return normalizedPath.split('/').filter(Boolean).pop() || normalizedPath;
+}
+
+/**
  * Utility service to resolve and normalize artifact URIs against originalUriBaseIds
  * and clean path artifacts according to OASIS SARIF 2.1.0 specifications.
  */
@@ -13,37 +68,12 @@ export function resolveArtifactPath(
     return { filePath: 'Not provided', fileName: 'Not provided' };
   }
 
-  let rawUri = artifactLoc?.uri || fallbackTarget || '';
+  const prefix = resolveChainedUriPrefix(artifactLoc?.uriBaseId, originalUriBaseIds);
+  const baseUri = artifactLoc?.uri || fallbackTarget || '';
+  const fullRawUri = `${prefix}${baseUri}`;
 
-  // If uriBaseId is provided, resolve against originalUriBaseIds
-  if (artifactLoc?.uriBaseId && originalUriBaseIds) {
-    const base = originalUriBaseIds[artifactLoc.uriBaseId];
-    if (base && base.uri) {
-      const baseUri = base.uri.endsWith('/') ? base.uri : `${base.uri}/`;
-      rawUri = `${baseUri}${rawUri}`;
-    }
-  }
+  const filePath = normalizeArtifactUri(fullRawUri);
+  const fileName = extractArtifactFileName(filePath);
 
-  // Normalize path
-  let normalized = rawUri
-    .replace(/^file:\/\/\/?/, '') // Strip file:// scheme
-    .replace(/\\/g, '/')          // Standardize Windows backslashes
-    .replace(/^\.\//, '');        // Strip leading ./
-
-  // Normalize common root macro placeholders
-  normalized = normalized
-    .replace(/^%SRCROOT%\/?/i, '')
-    .replace(/^#src_dir#\/?/i, '')
-    .replace(/^%WORKSPACE%\/?/i, '');
-
-  if (!normalized) {
-    normalized = 'Not provided';
-  }
-
-  const fileName =
-    normalized !== 'Not provided'
-      ? normalized.split('/').filter(Boolean).pop() || normalized
-      : 'Not provided';
-
-  return { filePath: normalized, fileName };
+  return { filePath, fileName };
 }

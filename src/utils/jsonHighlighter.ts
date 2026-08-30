@@ -1,3 +1,5 @@
+import DOMPurify from 'dompurify';
+
 /**
  * Syntax highlighter for JSON data structures.
  * Produces safe HTML strings with thematic syntax classes for dark code editors.
@@ -12,7 +14,7 @@ export function highlightJson(json: any): string {
     .replace(/>/g, '&gt;');
 
   // Tokenizer regex matching JSON keys, strings, numbers, booleans, and null
-  return escaped.replace(
+  const html = escaped.replace(
     /("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+-]?\d+)?)/g,
     (match) => {
       let cls = 'text-amber-300'; // numbers
@@ -35,4 +37,9 @@ export function highlightJson(json: any): string {
       return `<span class="${cls}">${match}</span>`;
     }
   );
+
+  return DOMPurify.sanitize(html, {
+    ALLOWED_TAGS: ['span'],
+    ALLOWED_ATTR: ['class'],
+  });
 }

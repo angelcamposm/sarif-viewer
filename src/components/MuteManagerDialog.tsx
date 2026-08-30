@@ -11,6 +11,56 @@ interface MuteManagerDialogProps {
   onClearAll: () => void;
 }
 
+function filterMutedRecords(records: MuteRecord[], query: string): MuteRecord[] {
+  const cleanQuery = query.trim().toLowerCase();
+  if (!cleanQuery) return records;
+
+  return records.filter(
+    (r) =>
+      r.ruleId.toLowerCase().includes(cleanQuery) ||
+      (r.filePath && r.filePath.toLowerCase().includes(cleanQuery)) ||
+      r.reason.toLowerCase().includes(cleanQuery) ||
+      (r.justification && r.justification.toLowerCase().includes(cleanQuery))
+  );
+}
+
+const MuteRecordItem: React.FC<{
+  record: MuteRecord;
+  onUnmute: (id: string) => void;
+}> = ({ record, onUnmute }) => (
+  <div className="py-3 px-2 flex items-start justify-between gap-3 hover:bg-slate-50 dark:hover:bg-zinc-800/60 rounded-md transition-colors text-xs">
+    <div className="space-y-1 flex-1">
+      <div className="flex items-center gap-2">
+        <span className="font-mono font-bold text-slate-900 dark:text-zinc-100 bg-slate-100 dark:bg-zinc-800 px-1.5 py-0.5 rounded border border-slate-200 dark:border-zinc-700">
+          {record.ruleId}
+        </span>
+        <span className="px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 text-[11px] font-semibold">
+          {record.reason}
+        </span>
+      </div>
+      <div className="text-[11px] text-slate-600 dark:text-zinc-400 font-mono">
+        {record.filePath || 'Global'}{record.line ? `:${record.line}` : ''}
+      </div>
+      {record.justification && (
+        <div className="text-[11px] text-slate-500 dark:text-zinc-400 italic">
+          "{record.justification}"
+        </div>
+      )}
+      <div className="text-[10px] text-slate-400 dark:text-zinc-500">
+        By {record.mutedBy || 'Reviewer'} on {new Date(record.mutedAt).toLocaleDateString()}
+      </div>
+    </div>
+
+    <button
+      type="button"
+      onClick={() => onUnmute(record.id)}
+      className="px-2.5 py-1 text-xs text-rose-700 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 dark:hover:bg-rose-900/40 border border-rose-200 dark:border-rose-800 rounded-md font-medium cursor-pointer"
+    >
+      Unmute
+    </button>
+  </div>
+);
+
 export const MuteManagerDialog: React.FC<MuteManagerDialogProps> = ({
   isOpen,
   onClose,
@@ -25,13 +75,7 @@ export const MuteManagerDialog: React.FC<MuteManagerDialogProps> = ({
   if (!isOpen) return null;
 
   const recordsList = Object.values(mutedRecords);
-  const filteredList = recordsList.filter(
-    (r) =>
-      r.ruleId.toLowerCase().includes(search.toLowerCase()) ||
-      (r.filePath && r.filePath.toLowerCase().includes(search.toLowerCase())) ||
-      r.reason.toLowerCase().includes(search.toLowerCase()) ||
-      (r.justification && r.justification.toLowerCase().includes(search.toLowerCase()))
-  );
+  const filteredList = filterMutedRecords(recordsList, search);
 
   const handleExport = () => {
     const jsonStr = muteStorage.exportJson();
@@ -79,7 +123,6 @@ export const MuteManagerDialog: React.FC<MuteManagerDialogProps> = ({
           onChange={handleImportFile}
         />
 
-        {/* Dialog Header */}
         <div className="flex items-center justify-between pb-4 border-b border-slate-200 dark:border-zinc-800">
           <div className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-lg bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 flex items-center justify-center">
@@ -103,7 +146,6 @@ export const MuteManagerDialog: React.FC<MuteManagerDialogProps> = ({
           </button>
         </div>
 
-        {/* Feedback alert */}
         {statusMessage && (
           <div className="mt-3 p-2.5 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 rounded-md text-emerald-800 dark:text-emerald-300 text-xs flex items-center gap-2">
             <CheckCircle className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
@@ -111,7 +153,6 @@ export const MuteManagerDialog: React.FC<MuteManagerDialogProps> = ({
           </div>
         )}
 
-        {/* Action Controls & Search */}
         <div className="py-3 flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 dark:border-zinc-800">
           <div className="relative flex-1 min-w-[200px]">
             <Search className="w-4 h-4 absolute left-2.5 top-2.5 text-slate-400 dark:text-zinc-500" />
@@ -161,7 +202,6 @@ export const MuteManagerDialog: React.FC<MuteManagerDialogProps> = ({
           </div>
         </div>
 
-        {/* Scrollable list */}
         <div className="flex-1 overflow-y-auto py-3 divide-y divide-slate-100 dark:divide-zinc-800">
           {filteredList.length === 0 ? (
             <div className="p-8 text-center text-slate-400 dark:text-zinc-500 text-xs">
@@ -171,45 +211,11 @@ export const MuteManagerDialog: React.FC<MuteManagerDialogProps> = ({
             </div>
           ) : (
             filteredList.map((rec) => (
-              <div
-                key={rec.id}
-                className="py-3 px-2 flex items-start justify-between gap-3 hover:bg-slate-50 dark:hover:bg-zinc-800/60 rounded-md transition-colors text-xs"
-              >
-                <div className="space-y-1 flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="font-mono font-bold text-slate-900 dark:text-zinc-100 bg-slate-100 dark:bg-zinc-800 px-1.5 py-0.5 rounded border border-slate-200 dark:border-zinc-700">
-                      {rec.ruleId}
-                    </span>
-                    <span className="px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 text-[11px] font-semibold">
-                      {rec.reason}
-                    </span>
-                  </div>
-                  <div className="text-[11px] text-slate-600 dark:text-zinc-400 font-mono">
-                    {rec.filePath || 'Global'}{rec.line ? `:${rec.line}` : ''}
-                  </div>
-                  {rec.justification && (
-                    <div className="text-[11px] text-slate-500 dark:text-zinc-400 italic">
-                      "{rec.justification}"
-                    </div>
-                  )}
-                  <div className="text-[10px] text-slate-400 dark:text-zinc-500">
-                    By {rec.mutedBy || 'Reviewer'} on {new Date(rec.mutedAt).toLocaleDateString()}
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => onUnmute(rec.id)}
-                  className="px-2.5 py-1 text-xs text-rose-700 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 dark:hover:bg-rose-900/40 border border-rose-200 dark:border-rose-800 rounded-md font-medium cursor-pointer"
-                >
-                  Unmute
-                </button>
-              </div>
+              <MuteRecordItem key={rec.id} record={rec} onUnmute={onUnmute} />
             ))
           )}
         </div>
 
-        {/* Footer */}
         <div className="pt-3 border-t border-slate-200 dark:border-zinc-800 flex justify-end">
           <button
             type="button"

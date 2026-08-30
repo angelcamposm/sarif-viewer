@@ -45,6 +45,173 @@ interface HeaderProps {
   onToggleTheme?: () => void;
 }
 
+const ExportDropdownMenu: React.FC<{
+  isOpen: boolean;
+  onClose: () => void;
+  report: ParsedSarifReport;
+  filteredFindings: NormalizedFinding[];
+}> = ({ isOpen, onClose, report, filteredFindings }) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="absolute right-0 mt-1.5 w-56 bg-white dark:bg-zinc-900 rounded-lg shadow-lg border border-slate-200 dark:border-zinc-800 py-1.5 z-50">
+      <div className="px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-zinc-500">
+        Export {filteredFindings.length} findings
+      </div>
+      <button
+        type="button"
+        onClick={() => {
+          exportService.exportToCsv(filteredFindings, report.fileName);
+          onClose();
+        }}
+        className="w-full px-3 py-2 text-left text-xs text-slate-700 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-zinc-800 flex items-center gap-2 cursor-pointer"
+      >
+        <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
+        <div>
+          <div className="font-medium">CSV Spreadsheet</div>
+          <div className="text-[10px] text-slate-400">Filtered findings data</div>
+        </div>
+      </button>
+
+      <button
+        type="button"
+        onClick={() => {
+          exportService.exportToSarif(report, filteredFindings);
+          onClose();
+        }}
+        className="w-full px-3 py-2 text-left text-xs text-slate-700 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-zinc-800 flex items-center gap-2 cursor-pointer"
+      >
+        <FileCode className="w-3.5 h-3.5 text-blue-600" />
+        <div>
+          <div className="font-medium">SARIF 2.1.0 JSON</div>
+          <div className="text-[10px] text-slate-400">With suppression records</div>
+        </div>
+      </button>
+
+      <button
+        type="button"
+        onClick={() => {
+          exportService.exportToMarkdown(report, filteredFindings);
+          onClose();
+        }}
+        className="w-full px-3 py-2 text-left text-xs text-slate-700 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-zinc-800 flex items-center gap-2 cursor-pointer"
+      >
+        <FileText className="w-3.5 h-3.5 text-purple-600" />
+        <div>
+          <div className="font-medium">Markdown Report</div>
+          <div className="text-[10px] text-slate-400">Executive security summary</div>
+        </div>
+      </button>
+    </div>
+  );
+};
+
+const AboutModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOpen, onClose }) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150">
+      <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-2xl border border-slate-200 dark:border-zinc-800 max-w-lg w-full p-6 animate-in zoom-in-95 duration-150 text-slate-800 dark:text-zinc-100 flex flex-col max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between pb-4 border-b border-slate-200 dark:border-zinc-800">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-lg bg-blue-600 flex items-center justify-center text-white shadow-xs">
+              <Shield className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-base font-bold text-slate-900 dark:text-zinc-100 leading-tight">
+                SARIF Security Viewer
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-zinc-400">Shift-Left Security & Compliance Platform</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-1 rounded-md text-slate-400 hover:text-slate-600 dark:hover:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800 cursor-pointer"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        <div className="py-4 space-y-4 text-xs leading-relaxed text-slate-600 dark:text-zinc-300">
+          <div className="p-3 bg-blue-50/80 dark:bg-zinc-800/80 rounded-lg border border-blue-100 dark:border-zinc-700 text-blue-900 dark:text-zinc-200 flex items-start gap-2.5">
+            <Sparkles className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
+            <p>
+              High-performance, 100% client-side viewer and triage interface for OASIS SARIF 2.1.0 security logs.
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <h4 className="font-bold text-slate-900 dark:text-zinc-100 text-xs uppercase tracking-wider">Features</h4>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <div className="p-2.5 bg-slate-50 dark:bg-zinc-950 rounded-lg border border-slate-200 dark:border-zinc-800">
+                <div className="font-semibold text-slate-900 dark:text-zinc-100 flex items-center gap-1.5 mb-1">
+                  <Bug className="w-3.5 h-3.5 text-blue-500" />
+                  <span>Dataflow & Taint Traces</span>
+                </div>
+                <p className="text-[11px] text-slate-500">Interactive step-by-step codeflow timeline & state inspector.</p>
+              </div>
+
+              <div className="p-2.5 bg-slate-50 dark:bg-zinc-950 rounded-lg border border-slate-200 dark:border-zinc-800">
+                <div className="font-semibold text-slate-900 dark:text-zinc-100 flex items-center gap-1.5 mb-1">
+                  <Scale className="w-3.5 h-3.5 text-purple-500" />
+                  <span>Taxonomies & Standards</span>
+                </div>
+                <p className="text-[11px] text-slate-500">Automatic mapping to CWE, OWASP Top 10, and NIST standards.</p>
+              </div>
+
+              <div className="p-2.5 bg-slate-50 dark:bg-zinc-950 rounded-lg border border-slate-200 dark:border-zinc-800">
+                <div className="font-semibold text-slate-900 dark:text-zinc-100 flex items-center gap-1.5 mb-1">
+                  <BellOff className="w-3.5 h-3.5 text-amber-500" />
+                  <span>Cross-Scan Muting</span>
+                </div>
+                <p className="text-[11px] text-slate-500">Persist triage decisions locally with import/export capabilities.</p>
+              </div>
+
+              <div className="p-2.5 bg-slate-50 dark:bg-zinc-950 rounded-lg border border-slate-200 dark:border-zinc-800">
+                <div className="font-semibold text-slate-900 dark:text-zinc-100 flex items-center gap-1.5 mb-1">
+                  <Globe className="w-3.5 h-3.5 text-indigo-500" />
+                  <span>DAST & API Traffic</span>
+                </div>
+                <p className="text-[11px] text-slate-500">Inspect captured HTTP requests and responses.</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="border-t border-slate-200 dark:border-zinc-800 pt-3 space-y-2">
+            <div className="flex items-center justify-between text-slate-500 dark:text-zinc-400 text-[11px]">
+              <span className="flex items-center gap-1">
+                <User className="w-3 h-3" />
+                Created by <strong>Angel Campos</strong>
+              </span>
+              <a
+                href="https://github.com/angelcamposm/sarif-viewer"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-blue-600 dark:text-blue-400 hover:underline"
+              >
+                <GithubIcon className="w-3.5 h-3.5" />
+                <span>GitHub Repository</span>
+                <ExternalLink className="w-2.5 h-2.5" />
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <div className="pt-3 border-t border-slate-200 dark:border-zinc-800 flex justify-end">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-4 py-1.5 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors shadow-xs cursor-pointer"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export const Header: React.FC<HeaderProps> = ({
   report,
   filteredFindings,
@@ -70,17 +237,11 @@ export const Header: React.FC<HeaderProps> = ({
       };
       reader.readAsText(file);
     }
-    // reset input so the same file can be reloaded if needed
     e.target.value = '';
-  };
-
-  const handleOpenClick = () => {
-    fileInputRef.current?.click();
   };
 
   return (
     <header className="bg-white dark:bg-zinc-900 border-b border-slate-200 dark:border-zinc-800 sticky top-0 z-30 transition-colors duration-200">
-      {/* Hidden file input */}
       <input
         ref={fileInputRef}
         type="file"
@@ -90,7 +251,6 @@ export const Header: React.FC<HeaderProps> = ({
       />
 
       <div className="w-full px-4 sm:px-6 lg:px-8 py-3 flex flex-wrap items-center justify-between gap-4">
-        {/* Left: App Title & Subtitle */}
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-lg bg-blue-600 flex items-center justify-center text-white shadow-xs">
             <Shield className="w-5 h-5" />
@@ -105,9 +265,7 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
         </div>
 
-        {/* Right: Actions */}
         <div className="flex items-center gap-2.5">
-          {/* Theme Toggle Button */}
           {onToggleTheme && (
             <button
               type="button"
@@ -119,7 +277,6 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
           )}
 
-          {/* Muted Alerts Button */}
           <button
             type="button"
             onClick={onOpenMuteManager}
@@ -139,7 +296,6 @@ export const Header: React.FC<HeaderProps> = ({
             )}
           </button>
 
-          {/* Export Dropdown */}
           <div className="relative">
             <button
               type="button"
@@ -152,238 +308,61 @@ export const Header: React.FC<HeaderProps> = ({
               <ChevronDown className="w-3 h-3 opacity-60" />
             </button>
 
-            {showExportMenu && report && (
-              <div className="absolute right-0 mt-1.5 w-56 bg-white dark:bg-zinc-900 rounded-lg shadow-lg border border-slate-200 dark:border-zinc-800 py-1.5 z-50">
-                <div className="px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-zinc-500">
-                  Export {filteredFindings.length} findings
-                </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    exportService.exportToCsv(filteredFindings, report.fileName);
-                    setShowExportMenu(false);
-                  }}
-                  className="w-full text-left px-3 py-1.5 hover:bg-slate-50 dark:hover:bg-zinc-800 text-xs text-slate-700 dark:text-zinc-300 flex items-center gap-2 cursor-pointer"
-                >
-                  <FileSpreadsheet className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                  <span>Export as CSV</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    exportService.exportToSarif(report, filteredFindings);
-                    setShowExportMenu(false);
-                  }}
-                  className="w-full text-left px-3 py-1.5 hover:bg-slate-50 dark:hover:bg-zinc-800 text-xs text-slate-700 dark:text-zinc-300 flex items-center gap-2 cursor-pointer"
-                >
-                  <FileCode className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                  <span>Export SARIF 2.1.0 JSON</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    exportService.exportToMarkdown(report, filteredFindings);
-                    setShowExportMenu(false);
-                  }}
-                  className="w-full text-left px-3 py-1.5 hover:bg-slate-50 dark:hover:bg-zinc-800 text-xs text-slate-700 dark:text-zinc-300 flex items-center gap-2 cursor-pointer"
-                >
-                  <FileText className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-                  <span>Export Markdown Report</span>
-                </button>
-              </div>
+            {report && (
+              <ExportDropdownMenu
+                isOpen={showExportMenu}
+                onClose={() => setShowExportMenu(false)}
+                report={report}
+                filteredFindings={filteredFindings}
+              />
             )}
           </div>
 
-          {/* Tool Invocations / Diagnostics Button */}
-          {onOpenDiagnostics && report && (
-            <button
-              type="button"
-              onClick={onOpenDiagnostics}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-700 dark:text-zinc-300 bg-white dark:bg-zinc-800 hover:bg-slate-50 dark:hover:bg-zinc-700 border border-slate-300 dark:border-zinc-700 rounded-md transition-colors shadow-2xs cursor-pointer"
-              title="View Tool Invocations & Diagnostics"
-            >
-              <Terminal className="w-3.5 h-3.5 text-slate-400 dark:text-zinc-500" />
-              <span>Diagnostics</span>
-            </button>
-          )}
-
-          {/* Rate this app / Info Button */}
           <button
             type="button"
-            onClick={() => setShowInfoModal(true)}
-            className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-slate-700 dark:text-zinc-300 bg-white dark:bg-zinc-800 hover:bg-slate-50 dark:hover:bg-zinc-700 border border-slate-300 dark:border-zinc-700 rounded-md transition-colors shadow-2xs cursor-pointer"
+            onClick={() => fileInputRef.current?.click()}
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-md shadow-xs transition-colors cursor-pointer"
+            title="Open local SARIF file"
           >
-            <Info className="w-3.5 h-3.5 text-slate-400 dark:text-zinc-500" />
-            <span>About</span>
+            <FolderOpen className="w-3.5 h-3.5" />
+            <span>Open SARIF</span>
           </button>
 
-          {/* Close Report Action (returns to welcome screen) */}
           {onCloseReport && report && (
             <button
               type="button"
               onClick={onCloseReport}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-700 dark:text-zinc-300 bg-white dark:bg-zinc-800 hover:bg-slate-50 dark:hover:bg-zinc-700 border border-slate-300 dark:border-zinc-700 rounded-md transition-colors shadow-2xs cursor-pointer"
-              title="Close active report and return to welcome screen"
+              className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-100 hover:bg-slate-100 dark:hover:bg-zinc-800 border border-slate-300 dark:border-zinc-700 rounded-md transition-colors shadow-2xs cursor-pointer"
+              title="Close active report"
             >
-              <X className="w-3.5 h-3.5 text-slate-400 dark:text-zinc-500" />
-              <span>Close Report</span>
+              <X className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Close</span>
             </button>
           )}
 
-          {/* Main Primary Action: Open SARIF */}
+          {onOpenDiagnostics && report && (
+            <button
+              type="button"
+              onClick={onOpenDiagnostics}
+              className="p-1.5 text-slate-600 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-zinc-100 bg-white dark:bg-zinc-800 border border-slate-300 dark:border-zinc-700 rounded-md shadow-2xs transition-colors cursor-pointer"
+              title="View Tool Invocations & Diagnostics"
+            >
+              <Terminal className="w-4 h-4" />
+            </button>
+          )}
+
           <button
             type="button"
-            onClick={handleOpenClick}
-            className="inline-flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 active:bg-blue-800 rounded-md transition-all shadow-xs cursor-pointer"
+            onClick={() => setShowInfoModal(true)}
+            className="p-1.5 text-slate-600 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-zinc-100 bg-white dark:bg-zinc-800 border border-slate-300 dark:border-zinc-700 rounded-md shadow-2xs transition-colors cursor-pointer"
+            title="About SARIF Security Viewer"
           >
-            <FolderOpen className="w-4 h-4" />
-            <span>Open SARIF</span>
+            <Info className="w-4 h-4" />
           </button>
         </div>
       </div>
 
-      {/* Enhanced About Modal */}
-      {showInfoModal && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-2xl border border-slate-200 dark:border-zinc-800 max-w-lg w-full p-6 animate-in zoom-in-95 duration-150 text-slate-800 dark:text-zinc-100 flex flex-col max-h-[90vh] overflow-y-auto">
-            {/* Modal Header */}
-            <div className="flex items-start justify-between pb-4 border-b border-slate-200 dark:border-zinc-800">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-sm">
-                  <Shield className="w-6 h-6" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h2 className="text-base font-bold text-slate-900 dark:text-zinc-100">
-                      SARIF Security Report Viewer
-                    </h2>
-                    <span className="px-1.5 py-0.5 text-[10px] font-mono font-bold bg-blue-50 dark:bg-blue-950/70 text-blue-700 dark:text-blue-400 rounded border border-blue-200 dark:border-blue-800">
-                      v1.0.0
-                    </span>
-                  </div>
-                  <p className="text-xs text-slate-500 dark:text-zinc-400 mt-0.5">
-                    OASIS SARIF 2.1.0 Compliant • Shift-Left Architecture
-                  </p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowInfoModal(false)}
-                className="p-1 rounded-md text-slate-400 dark:text-zinc-500 hover:text-slate-600 dark:hover:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800 cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            {/* Modal Content */}
-            <div className="space-y-4 py-4 text-xs text-slate-600 dark:text-zinc-300 leading-relaxed">
-              <div className="p-3 bg-slate-50 dark:bg-zinc-950 rounded-lg border border-slate-200/80 dark:border-zinc-800 space-y-2">
-                <div className="flex items-center gap-1.5 font-semibold text-slate-900 dark:text-zinc-100">
-                  <Sparkles className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
-                  <span>Privacy-First Static Analysis</span>
-                </div>
-                <p className="text-slate-600 dark:text-zinc-400">
-                  All parsing, triage, filtering, and report generation occur strictly in your browser memory.
-                  Zero code, telemetry, or finding data is ever transmitted to external servers.
-                </p>
-              </div>
-
-              {/* Repository & Open Source Section */}
-              <div>
-                <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-zinc-500 mb-2">
-                  Repository & Links
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  <a
-                    href="https://github.com/angelcamposm/sarif-viewer"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="p-2.5 rounded-lg border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-800/60 hover:bg-slate-50 dark:hover:bg-zinc-800 flex items-center justify-between group transition-colors"
-                  >
-                    <div className="flex items-center gap-2">
-                      <GithubIcon className="w-4 h-4 text-slate-700 dark:text-zinc-300 group-hover:text-blue-600 dark:group-hover:text-blue-400" />
-                      <span className="font-medium text-slate-800 dark:text-zinc-200">GitHub Repository</span>
-                    </div>
-                    <ExternalLink className="w-3 h-3 text-slate-400 group-hover:text-blue-600 dark:group-hover:text-blue-400" />
-                  </a>
-
-                  <a
-                    href="https://angelcamposm.github.io/sarif-viewer/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="p-2.5 rounded-lg border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-800/60 hover:bg-slate-50 dark:hover:bg-zinc-800 flex items-center justify-between group transition-colors"
-                  >
-                    <div className="flex items-center gap-2">
-                      <Globe className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                      <span className="font-medium text-slate-800 dark:text-zinc-200">Live Demo</span>
-                    </div>
-                    <ExternalLink className="w-3 h-3 text-slate-400 group-hover:text-emerald-600 dark:group-hover:text-emerald-400" />
-                  </a>
-
-                  <a
-                    href="https://github.com/angelcamposm/sarif-viewer/issues"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="p-2.5 rounded-lg border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-800/60 hover:bg-slate-50 dark:hover:bg-zinc-800 flex items-center justify-between group transition-colors"
-                  >
-                    <div className="flex items-center gap-2">
-                      <Bug className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-                      <span className="font-medium text-slate-800 dark:text-zinc-200">Report an Issue</span>
-                    </div>
-                    <ExternalLink className="w-3 h-3 text-slate-400 group-hover:text-amber-600 dark:group-hover:text-amber-400" />
-                  </a>
-
-                  <div className="p-2.5 rounded-lg border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-800/60 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Scale className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-                      <span className="font-medium text-slate-800 dark:text-zinc-200">License: MIT</span>
-                    </div>
-                    <span className="text-[10px] text-slate-400 dark:text-zinc-500 font-mono">Open Source</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Creator Info Section */}
-              <div className="pt-2 border-t border-slate-100 dark:border-zinc-800">
-                <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-zinc-500 mb-2">
-                  Creator & Maintainer
-                </div>
-                <div className="p-3 bg-slate-50 dark:bg-zinc-950 rounded-lg border border-slate-200 dark:border-zinc-800 flex items-center justify-between">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-zinc-800 flex items-center justify-center text-blue-700 dark:text-blue-400 font-bold text-xs border border-blue-200 dark:border-zinc-700">
-                      <User className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <div className="font-semibold text-slate-900 dark:text-zinc-100">Ángel Campos</div>
-                      <div className="text-[11px] text-slate-500 dark:text-zinc-400 font-mono">@angelcamposm</div>
-                    </div>
-                  </div>
-                  <a
-                    href="https://github.com/angelcamposm"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-medium text-slate-700 dark:text-zinc-300 bg-white dark:bg-zinc-800 hover:bg-slate-100 dark:hover:bg-zinc-700 border border-slate-300 dark:border-zinc-700 rounded-md transition-colors shadow-2xs"
-                  >
-                    <span>Profile</span>
-                    <ExternalLink className="w-3 h-3 text-slate-400" />
-                  </a>
-                </div>
-              </div>
-            </div>
-
-            {/* Modal Footer */}
-            <div className="pt-3 border-t border-slate-200 dark:border-zinc-800 flex justify-end">
-              <button
-                type="button"
-                onClick={() => setShowInfoModal(false)}
-                className="px-4 py-1.5 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors shadow-xs cursor-pointer"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <AboutModal isOpen={showInfoModal} onClose={() => setShowInfoModal(false)} />
     </header>
   );
 };

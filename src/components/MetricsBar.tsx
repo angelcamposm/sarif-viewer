@@ -18,23 +18,66 @@ interface MetricsBarProps {
   onSelectMuteStatus?: (status: 'all' | 'active' | 'muted') => void;
 }
 
-export const MetricsBar: React.FC<MetricsBarProps> = ({
-  report,
-  selectedLevel,
-  onSelectLevel,
-  muteStatus,
-  onSelectMuteStatus,
-}) => {
-  const metricItems: Array<{
-    key: string;
-    label: string;
-    count: number;
-    color: string;
-    iconBg: string;
-    icon: React.ReactNode;
-    isSelected: boolean;
-    onClick?: () => void;
-  }> = [
+interface MetricItem {
+  key: string;
+  label: string;
+  count: number;
+  color: string;
+  iconBg: string;
+  icon: React.ReactNode;
+  isSelected: boolean;
+  onClick?: () => void;
+}
+
+const MetricCard: React.FC<{ item: MetricItem }> = ({ item }) => {
+  const isClickable = !!item.onClick;
+
+  let cardClass = 'border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-800/70';
+  if (item.isSelected) {
+    cardClass = 'bg-blue-50/70 dark:bg-zinc-800 border-blue-300 dark:border-zinc-600 ring-1 ring-blue-200 dark:ring-zinc-600';
+  } else if (item.key === 'muted') {
+    cardClass = 'bg-amber-50/40 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800/80 hover:bg-amber-50/80 dark:hover:bg-amber-900/50';
+  }
+
+  let labelClass = 'text-slate-500 dark:text-zinc-400';
+  if (item.isSelected) {
+    labelClass = 'text-blue-700 dark:text-blue-400 font-bold';
+  } else if (item.key === 'muted') {
+    labelClass = 'text-amber-700 dark:text-amber-400';
+  }
+
+  return (
+    <div
+      onClick={item.onClick}
+      className={`p-4 rounded-lg border transition-all flex items-center gap-3 ${
+        isClickable ? 'cursor-pointer hover:shadow-2xs' : 'cursor-default'
+      } ${cardClass}`}
+      title={isClickable ? `Click to filter by ${item.label}` : undefined}
+    >
+      <div className={`w-12 h-12 rounded-lg flex items-center justify-center shrink-0 ${item.iconBg}`}>
+        {item.icon}
+      </div>
+
+      <div className="min-w-0 flex-1">
+        <div className={`text-[11px] font-semibold uppercase tracking-wider truncate ${labelClass}`}>
+          {item.label}
+        </div>
+        <div className={`text-xl sm:text-2xl font-bold tracking-tight leading-tight ${item.color}`}>
+          {item.count}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+function buildMetricItems(
+  report: ParsedSarifReport,
+  selectedLevel: string,
+  onSelectLevel: (level: string) => void,
+  muteStatus?: 'all' | 'active' | 'muted',
+  onSelectMuteStatus?: (status: 'all' | 'active' | 'muted') => void
+): MetricItem[] {
+  const items: MetricItem[] = [
     {
       key: 'all',
       label: 'Total',
@@ -99,9 +142,8 @@ export const MetricsBar: React.FC<MetricsBarProps> = ({
     },
   ];
 
-  // When alerts are muted, include Muted as a metric sharing equal space with the rest
   if (report.mutedCount > 0) {
-    metricItems.push({
+    items.push({
       key: 'muted',
       label: 'Muted',
       count: report.mutedCount,
@@ -117,54 +159,30 @@ export const MetricsBar: React.FC<MetricsBarProps> = ({
     });
   }
 
+  return items;
+}
+
+export const MetricsBar: React.FC<MetricsBarProps> = ({
+  report,
+  selectedLevel,
+  onSelectLevel,
+  muteStatus,
+  onSelectMuteStatus,
+}) => {
+  const metricItems = buildMetricItems(
+    report,
+    selectedLevel,
+    onSelectLevel,
+    muteStatus,
+    onSelectMuteStatus
+  );
+
   return (
     <div className="bg-white dark:bg-zinc-900 border-b border-slate-200 dark:border-zinc-800 p-4 sm:p-6 lg:p-8 transition-colors duration-200">
-      <div className="w-full">
-        {/* Full width grid filling 100% of the space dynamically across all columns */}
-        <div className="w-full grid grid-cols-2 sm:grid-cols-3 lg:grid-flow-col lg:auto-cols-fr gap-6 items-stretch">
-          {metricItems.map((m) => {
-            const isClickable = !!m.onClick;
-            return (
-              <div
-                key={m.label}
-                onClick={m.onClick}
-                className={`p-4 rounded-lg border transition-all flex items-center gap-3 ${
-                  isClickable ? 'cursor-pointer hover:shadow-2xs' : 'cursor-default'
-                } ${
-                  m.isSelected
-                    ? 'bg-blue-50/70 dark:bg-zinc-800 border-blue-300 dark:border-zinc-600 ring-1 ring-blue-200 dark:ring-zinc-600'
-                    : m.key === 'muted'
-                    ? 'bg-amber-50/40 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800/80 hover:bg-amber-50/80 dark:hover:bg-amber-900/50'
-                    : 'border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-800/70'
-                }`}
-                title={isClickable ? `Click to filter by ${m.label}` : undefined}
-              >
-                {/* Left: Icon container */}
-                <div className={`w-12 h-12 rounded-lg flex items-center justify-center shrink-0 ${m.iconBg}`}>
-                  {m.icon}
-                </div>
-
-                {/* Right: Text Label and Metric value */}
-                <div className="min-w-0 flex-1">
-                  <div
-                    className={`text-[11px] font-semibold uppercase tracking-wider truncate ${
-                      m.isSelected
-                        ? 'text-blue-700 dark:text-blue-400 font-bold'
-                        : m.key === 'muted'
-                        ? 'text-amber-700 dark:text-amber-400'
-                        : 'text-slate-500 dark:text-zinc-400'
-                    }`}
-                  >
-                    {m.label}
-                  </div>
-                  <div className={`text-xl sm:text-2xl font-bold tracking-tight leading-tight ${m.color}`}>
-                    {m.count}
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+      <div className="w-full grid grid-cols-2 sm:grid-cols-3 lg:grid-flow-col lg:auto-cols-fr gap-6 items-stretch">
+        {metricItems.map((item) => (
+          <MetricCard key={item.key} item={item} />
+        ))}
       </div>
     </div>
   );

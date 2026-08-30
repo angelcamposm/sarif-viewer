@@ -47,4 +47,25 @@ describe('MuteStorage Service', () => {
     expect(muteStorage.isMuted('rec_1')).toBe(true);
     expect(muteStorage.isMuted('rec_2')).toBe(true);
   });
+
+  it('notifies subscribers when storage changes', () => {
+    let notified = 0;
+    const unsubscribe = muteStorage.subscribe(() => {
+      notified++;
+    });
+
+    muteStorage.mute({
+      id: 'sub_test_1',
+      ruleId: 'R1',
+      reason: 'Other',
+      mutedAt: new Date().toISOString(),
+    });
+
+    expect(notified).toBe(1);
+    expect(muteStorage.getSnapshot()['sub_test_1']).toBeDefined();
+
+    unsubscribe();
+    muteStorage.unmute('sub_test_1');
+    expect(notified).toBe(1); // Not called after unsubscribe
+  });
 });

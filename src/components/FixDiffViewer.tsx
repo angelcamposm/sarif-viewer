@@ -5,9 +5,10 @@ import { Wrench, Copy, Check, FileCode } from 'lucide-react';
 interface FixDiffViewerProps {
   fixes: NormalizedFix[];
   originalSnippet?: string;
+  findingFilePath?: string;
 }
 
-export const FixDiffViewer: React.FC<FixDiffViewerProps> = ({ fixes, originalSnippet }) => {
+export const FixDiffViewer: React.FC<FixDiffViewerProps> = ({ fixes, originalSnippet, findingFilePath }) => {
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
 
   if (!fixes || fixes.length === 0) return null;
@@ -81,7 +82,7 @@ export const FixDiffViewer: React.FC<FixDiffViewerProps> = ({ fixes, originalSni
 
                       <div className="divide-y divide-slate-800/60">
                         {/* Deleted / Existing content representation */}
-                        {originalSnippet && (
+                        {originalSnippet && (!findingFilePath || findingFilePath === change.filePath) && (
                           <div className="p-2.5 bg-rose-950/40 text-rose-300 flex items-start gap-2 overflow-x-auto">
                             <span className="text-rose-500 font-bold select-none">-</span>
                             <pre className="leading-relaxed">
