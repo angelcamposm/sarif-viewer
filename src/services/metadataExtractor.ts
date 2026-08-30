@@ -39,7 +39,7 @@ function findPropertyCaseInsensitive(props: PropertyBag, keys: string[]): string
     }
     const lowerTarget = key.toLowerCase();
     const entry = Object.entries(props).find(([k]) => k.toLowerCase() === lowerTarget);
-    if (entry && entry[1] !== undefined && entry[1] !== null) {
+    if (entry?.[1] != null) {
       return String(entry[1]);
     }
   }
