@@ -7,7 +7,7 @@ describe('DragDropOverlay Component', () => {
     const onFileLoaded = vi.fn();
     render(<DragDropOverlay onFileLoaded={onFileLoaded} activeReportName="report-1.sarif" />);
 
-    expect(screen.queryByRole('region', { name: /drop sarif report overlay/i })).toBeNull();
+    expect(screen.queryByRole('dialog')).toBeNull();
   });
 
   it('renders overlay when files are dragged into window and dismisses on dragleave', () => {
@@ -35,7 +35,7 @@ describe('DragDropOverlay Component', () => {
       window.dispatchEvent(dragEnterEvent);
     });
 
-    expect(screen.getByRole('region', { name: /drop sarif report overlay/i })).toBeDefined();
+    expect(screen.getByRole('dialog')).toBeDefined();
     expect(screen.getByText(/report-1\.sarif/i)).toBeDefined();
 
     // Simulate dragleave
@@ -44,7 +44,7 @@ describe('DragDropOverlay Component', () => {
       window.dispatchEvent(dragLeaveEvent);
     });
 
-    expect(screen.queryByRole('region', { name: /drop sarif report overlay/i })).toBeNull();
+    expect(screen.queryByRole('dialog')).toBeNull();
   });
 
   it('calls onFileLoaded when file is dropped onto overlay', async () => {
@@ -60,7 +60,7 @@ describe('DragDropOverlay Component', () => {
       window.dispatchEvent(dragEnterEvent);
     });
 
-    expect(screen.getByRole('region', { name: /drop sarif report overlay/i })).toBeDefined();
+    expect(screen.getByRole('dialog')).toBeDefined();
 
     // Create a mock file
     const sampleContent = JSON.stringify({ version: '2.1.0', runs: [] });
@@ -76,7 +76,7 @@ describe('DragDropOverlay Component', () => {
     });
 
     expect(onFileLoaded).toHaveBeenCalledWith(sampleContent, 'new-report.sarif');
-    expect(screen.queryByRole('region', { name: /drop sarif report overlay/i })).toBeNull();
+    expect(screen.queryByRole('dialog')).toBeNull();
   });
 
   it('dismisses overlay when Escape key is pressed', () => {
@@ -91,13 +91,13 @@ describe('DragDropOverlay Component', () => {
       window.dispatchEvent(dragEnterEvent);
     });
 
-    expect(screen.getByRole('region', { name: /drop sarif report overlay/i })).toBeDefined();
+    expect(screen.getByRole('dialog')).toBeDefined();
 
     act(() => {
       window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
     });
 
-    expect(screen.queryByRole('region', { name: /drop sarif report overlay/i })).toBeNull();
+    expect(screen.queryByRole('dialog')).toBeNull();
   });
 
   it('dismisses overlay when close button is clicked', () => {
@@ -115,6 +115,6 @@ describe('DragDropOverlay Component', () => {
     const closeBtn = screen.getByTitle(/dismiss drop overlay/i);
     fireEvent.click(closeBtn);
 
-    expect(screen.queryByRole('region', { name: /drop sarif report overlay/i })).toBeNull();
+    expect(screen.queryByRole('dialog')).toBeNull();
   });
 });

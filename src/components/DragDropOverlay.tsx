@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { UploadCloud, FileCode2, Sparkles, X } from 'lucide-react';
+import { UploadCloud, FileCode2, X } from 'lucide-react';
 
 interface DragDropOverlayProps {
   onFileLoaded: (fileContent: string, fileName: string) => void;
@@ -73,6 +73,11 @@ export const DragDropOverlay: React.FC<DragDropOverlayProps> = ({
     [isEnabled, onFileLoaded]
   );
 
+  const handleDismiss = useCallback(() => {
+    dragCounterRef.current = 0;
+    setIsDragging(false);
+  }, []);
+
   useEffect(() => {
     if (!isEnabled) {
       return;
@@ -80,8 +85,7 @@ export const DragDropOverlay: React.FC<DragDropOverlayProps> = ({
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        dragCounterRef.current = 0;
-        setIsDragging(false);
+        handleDismiss();
       }
     };
 
@@ -98,55 +102,53 @@ export const DragDropOverlay: React.FC<DragDropOverlayProps> = ({
       window.removeEventListener('drop', handleDrop);
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isEnabled, handleDragEnter, handleDragLeave, handleDragOver, handleDrop]);
+  }, [isEnabled, handleDragEnter, handleDragLeave, handleDragOver, handleDrop, handleDismiss]);
 
   if (!isDragging) return null;
 
   return (
-    <div
-      role="region"
-      aria-label="Drop SARIF Report Overlay"
-      className="fixed inset-0 z-50 bg-slate-950/75 dark:bg-black/85 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-150 transition-all"
+    <dialog
+      open
+      aria-labelledby="drop-overlay-title"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/60 dark:bg-black/75 backdrop-blur-xs w-full h-full border-none max-w-none max-h-none overflow-hidden m-0 animate-in fade-in duration-150"
     >
-      <div className="max-w-xl w-full p-8 sm:p-12 rounded-3xl border-2 border-dashed border-blue-500 bg-white/95 dark:bg-zinc-900/95 text-slate-900 dark:text-zinc-100 shadow-2xl flex flex-col items-center text-center relative animate-in zoom-in-95 duration-150">
+      <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-zinc-800 max-w-lg w-full p-6 sm:p-8 text-center relative text-slate-900 dark:text-zinc-100 animate-in zoom-in-95 duration-150">
         <button
           type="button"
-          onClick={() => {
-            dragCounterRef.current = 0;
-            setIsDragging(false);
-          }}
-          className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-700 dark:text-zinc-500 dark:hover:text-zinc-200 rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+          onClick={handleDismiss}
+          className="absolute top-4 right-4 p-1.5 text-slate-400 dark:text-zinc-500 hover:text-slate-700 dark:hover:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800 rounded-lg transition-colors cursor-pointer"
           title="Dismiss drop overlay (Esc)"
         >
-          <X className="w-5 h-5" />
+          <X className="w-4 h-4" />
         </button>
 
-        <div className="w-20 h-20 rounded-2xl bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800/80 text-blue-600 dark:text-blue-400 flex items-center justify-center mb-5 shadow-lg shadow-blue-500/10">
-          <UploadCloud className="w-10 h-10 animate-bounce" />
-        </div>
+        <div className="p-6 sm:p-8 rounded-2xl border-2 border-dashed border-blue-500/80 dark:border-blue-500/70 bg-blue-50/40 dark:bg-blue-950/20 flex flex-col items-center justify-center text-center">
+          <div className="mx-auto w-16 h-16 rounded-2xl bg-blue-50 dark:bg-zinc-800 text-blue-600 dark:text-blue-400 flex items-center justify-center mb-5 shadow-2xs border border-blue-100 dark:border-zinc-700">
+            <UploadCloud className="w-8 h-8 animate-bounce" />
+          </div>
 
-        <h3 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-zinc-100 flex items-center gap-2">
-          <span>Drop New SARIF Report</span>
-          <Sparkles className="w-5 h-5 text-amber-500 shrink-0" />
-        </h3>
+          <h2 id="drop-overlay-title" className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-zinc-100 mb-2">
+            Open new SARIF report
+          </h2>
 
-        <p className="text-sm text-slate-600 dark:text-zinc-300 mt-2 max-w-md leading-relaxed">
-          Release the file anywhere on screen to replace{' '}
-          {activeReportName ? (
-            <strong className="font-mono text-blue-600 dark:text-blue-400 font-semibold break-all">
-              {activeReportName}
-            </strong>
-          ) : (
-            'the current report'
-          )}{' '}
-          and load the new findings.
-        </p>
+          <p className="text-xs sm:text-sm text-slate-500 dark:text-zinc-400 mb-6 max-w-md mx-auto leading-relaxed">
+            Drop your file to replace{' '}
+            {activeReportName ? (
+              <strong className="font-mono text-slate-800 dark:text-zinc-200 font-semibold break-all">
+                {activeReportName}
+              </strong>
+            ) : (
+              'the current report'
+            )}{' '}
+            and review new findings.
+          </p>
 
-        <div className="mt-6 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-xs font-mono text-slate-700 dark:text-zinc-300">
-          <FileCode2 className="w-4 h-4 text-blue-500" />
-          <span>Supports OASIS SARIF 2.1.0 (.sarif, .json)</span>
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/80 dark:bg-zinc-900/80 border border-slate-200 dark:border-zinc-700/80 text-xs font-medium text-slate-600 dark:text-zinc-300 shadow-2xs">
+            <FileCode2 className="w-4 h-4 text-blue-500 shrink-0" />
+            <span className="font-mono text-[11px]">.sarif • .json (SARIF 2.1.0)</span>
+          </div>
         </div>
       </div>
-    </div>
+    </dialog>
   );
 };
