@@ -19,6 +19,7 @@ import { MuteModal } from './components/MuteModal';
 import { MuteManagerDialog } from './components/MuteManagerDialog';
 import { RawSarifModal } from './components/RawSarifModal';
 import { InvocationsPanel } from './components/InvocationsPanel';
+import { DragDropOverlay } from './components/DragDropOverlay';
 import { Footer } from './components/Footer';
 
 const AppContent: React.FC = () => {
@@ -178,6 +179,15 @@ const AppContent: React.FC = () => {
           finding={rawSarifModalFinding}
           isOpen={!!rawSarifModalFinding}
           onClose={() => setRawSarifModalFinding(null)}
+        />
+      )}
+
+      {/* Global Drag & Drop Overlay to Replace Active Report */}
+      {report && (
+        <DragDropOverlay
+          onFileLoaded={loadFile}
+          activeReportName={report.fileName}
+          isEnabled={!!report}
         />
       )}
     </div>
