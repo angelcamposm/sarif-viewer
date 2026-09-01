@@ -94,9 +94,6 @@ export const FixDiffViewer: React.FC<FixDiffViewerProps> = ({ fixes, originalSni
                         <span className="font-semibold text-slate-800 dark:text-zinc-200 truncate" title={change.filePath}>
                           {change.filePath}
                         </span>
-                        <span className="text-[11px] text-slate-400 dark:text-zinc-500 px-1.5 py-0.5 bg-slate-200/70 dark:bg-zinc-800 rounded">
-                          Lines {rep.deletedRegion.startLine} - {rep.deletedRegion.endLine}
-                        </span>
                       </div>
 
                       {rep.insertedContent && (
@@ -134,14 +131,14 @@ export const FixDiffViewer: React.FC<FixDiffViewerProps> = ({ fixes, originalSni
                               <tr key={`line-${idx}`} className={`transition-colors ${rowBg}`}>
                                 {/* Old Line Number */}
                                 <td
-                                  className={`w-10 min-w-[2.5rem] text-right pr-2.5 py-2 text-slate-400 dark:text-zinc-500 select-none text-[11px] align-top border-r ${gutterBorder}`}
+                                  className={`w-10 min-w-[2.5rem] text-right pr-2.5 py-2 text-zinc-800 dark:text-zinc-500 select-none text-[11px] align-top border-r ${gutterBorder}`}
                                 >
                                   {lineItem.oldLineNumber || ''}
                                 </td>
 
                                 {/* New Line Number */}
                                 <td
-                                  className={`w-10 min-w-[2.5rem] text-right pr-2.5 py-2 text-slate-400 dark:text-zinc-500 select-none text-[11px] align-top border-r ${gutterBorder}`}
+                                  className={`w-10 min-w-[2.5rem] text-right pr-2.5 py-2 text-zinc-800 dark:text-zinc-500 select-none text-[11px] align-top border-r ${gutterBorder}`}
                                 >
                                   {lineItem.newLineNumber || ''}
                                 </td>

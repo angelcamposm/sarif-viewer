@@ -168,7 +168,7 @@ describe('DetailsPanel Component', () => {
     fireEvent.click(remediationTab);
 
     expect(screen.getByText(/use parameterized query binding/i)).toBeDefined();
-    expect(screen.getByText(/Lines 42 - 42/i)).toBeDefined();
+    expect(screen.getByText('src/controllers/UserController.ts')).toBeDefined();
     expect(screen.getByRole('button', { name: /copy replacement/i })).toBeDefined();
   });
 
