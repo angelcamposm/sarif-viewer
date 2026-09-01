@@ -14,11 +14,12 @@ export default defineConfig({
       output: {
         manualChunks(id) {
           if (id.includes('node_modules')) {
+            // Keep Prism bundled with app code so global initialization is guaranteed in-chunk
+            if (id.includes('prismjs')) {
+              return undefined;
+            }
             if (id.includes('react') || id.includes('react-dom') || id.includes('scheduler')) {
               return 'vendor-react';
-            }
-            if (id.includes('prismjs')) {
-              return 'vendor-prism';
             }
             if (id.includes('dompurify')) {
               return 'vendor-dompurify';

@@ -1,4 +1,4 @@
-import Prism from 'prismjs';
+import Prism from './prismSetup';
 
 // Load common language grammars into Prism
 import 'prismjs/components/prism-typescript';
