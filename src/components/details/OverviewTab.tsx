@@ -115,8 +115,8 @@ const PrimaryLocationSection: React.FC<{
       {finding.codeSnippet && (
         <div>
           <div className="text-xs text-slate-500 dark:text-zinc-400 font-medium mb-1.5">Source Snippet</div>
-          <div className="bg-slate-900 dark:bg-black text-slate-100 p-3 rounded-lg font-mono text-xs overflow-x-auto border border-slate-800 dark:border-zinc-800 shadow-inner">
-            <span className="text-slate-500 dark:text-zinc-500 mr-2 select-none">{finding.line || 1}</span>
+          <div className="bg-white dark:bg-zinc-950 text-slate-800 dark:text-zinc-200 p-3 rounded-lg font-mono text-xs overflow-x-auto border border-slate-200 dark:border-zinc-800 shadow-2xs">
+            <span className="text-slate-400 dark:text-zinc-500 mr-2 select-none">{finding.line || 1}</span>
             <code>{finding.codeSnippet}</code>
           </div>
         </div>
