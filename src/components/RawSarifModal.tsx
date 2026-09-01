@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { NormalizedFinding } from '../types/viewer';
 import { highlightJson } from '../utils/jsonHighlighter';
+import { formatVersion } from '../utils/formatters';
 import { X, Copy, Check, Download, Code2, ShieldAlert } from 'lucide-react';
 
 interface RawSarifModalProps {
@@ -68,7 +69,7 @@ export const RawSarifModal: React.FC<RawSarifModalProps> = ({
                 </span>
               </h2>
               <p className="text-xs text-slate-500 dark:text-zinc-400 font-mono mt-0.5">
-                ID: {finding.id} • Driver: {finding.toolName} {finding.toolVersion ? `v${finding.toolVersion}` : ''}
+                ID: {finding.id} • Driver: {finding.toolName} {formatVersion(finding.toolVersion)}
               </p>
             </div>
           </div>

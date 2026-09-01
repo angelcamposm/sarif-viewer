@@ -1,5 +1,6 @@
 import Papa from 'papaparse';
 import { NormalizedFinding, ParsedSarifReport, SarifRunSummary, ApplicationMetadata } from '../types/viewer';
+import { formatVersion } from '../utils/formatters';
 
 /**
  * Downloads a file to the user's browser securely with shift-left privacy (no server involved).
@@ -40,7 +41,7 @@ function mapFindingToCsvRow(f: NormalizedFinding): Record<string, string | numbe
     'Taxonomies': f.taxonomies ? f.taxonomies.map((t) => t.id).join('; ') : '',
     'Dataflow Steps': dataflowStepsCount,
     'Automated Fixes': f.fixes ? f.fixes.length : 0,
-    'Tool': f.toolName + (f.toolVersion ? ` ${f.toolVersion}` : ''),
+    'Tool': f.toolName + (f.toolVersion ? ` ${formatVersion(f.toolVersion)}` : ''),
     'Status': f.isMuted ? 'MUTED' : 'ACTIVE',
     'Mute Reason': muteReason,
     'Mute Justification': f.muteRecord?.justification || '',
@@ -122,7 +123,7 @@ function buildMarkdownFindingEntry(f: NormalizedFinding, index: number): string 
   const levelUpper = f.effectiveLevel.toUpperCase();
   const title = f.ruleName || f.message.substring(0, 60);
   const locationSuffix = f.line ? `:${f.line}` : '';
-  const toolVersionStr = f.toolVersion ? ` ${f.toolVersion}` : '';
+  const toolVersionStr = f.toolVersion ? ` ${formatVersion(f.toolVersion)}` : '';
 
   let md = `### ${index + 1}. [${levelUpper}] ${f.ruleId}: ${title}\n\n`;
   md += `- **Location**: \`${f.filePath}${locationSuffix}\`\n`;

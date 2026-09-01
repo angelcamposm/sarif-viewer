@@ -110,7 +110,7 @@ const AppContent: React.FC = () => {
             />
 
             {/* Two-Column Workspace Layout */}
-            <div className="bg-white dark:bg-zinc-900 grid grid-cols-1 lg:grid-cols-12 gap-5 items-start px-4 sm:px-6 lg:px-8 py-5">
+            <div className="bg-white dark:bg-zinc-900 grid grid-cols-1 lg:grid-cols-12 gap-5 items-start p-4 sm:p-6 lg:p-8">
               {/* Left Column: Interactive Sortable Findings Table */}
               <div className="lg:col-span-7 xl:col-span-7 flex flex-col">
                 <FindingsTable

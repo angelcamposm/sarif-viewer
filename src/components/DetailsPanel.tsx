@@ -7,6 +7,7 @@ import { FixDiffViewer } from './FixDiffViewer';
 import { RelatedLocationsList } from './RelatedLocationsList';
 import { WebRequestInspector } from './WebRequestInspector';
 import { renderSafeMarkdown } from '../utils/sanitize';
+import { formatVersion } from '../utils/formatters';
 import {
   FileCode,
   Copy,
@@ -439,7 +440,7 @@ export const DetailsPanel: React.FC<DetailsPanelProps> = ({
               Tool Driver
             </div>
             <div className="font-medium text-slate-800 dark:text-zinc-200 text-sm">
-              {finding.toolName} {finding.toolVersion ? `v${finding.toolVersion}` : ''}
+              {finding.toolName} {formatVersion(finding.toolVersion)}
             </div>
           </div>
         </section>

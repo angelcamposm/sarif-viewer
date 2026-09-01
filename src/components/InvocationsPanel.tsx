@@ -2,6 +2,7 @@ import React from 'react';
 import { ParsedSarifReport, SarifRunSummary } from '../types/viewer';
 import { Invocation } from '../types/sarif';
 import { Terminal, Clock, CheckCircle2, XCircle, X, Shield } from 'lucide-react';
+import { formatVersion } from '../utils/formatters';
 
 interface InvocationsPanelProps {
   report: ParsedSarifReport;
@@ -64,7 +65,7 @@ const RunInvocationsSection: React.FC<{ run: SarifRunSummary }> = ({ run }) => (
         <span className="font-bold text-sm text-slate-900 dark:text-zinc-100">{run.toolName}</span>
         {run.toolVersion && (
           <span className="px-1.5 py-0.2 rounded bg-slate-200 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 font-mono text-[10px]">
-            v{run.toolVersion}
+            {formatVersion(run.toolVersion)}
           </span>
         )}
       </div>
