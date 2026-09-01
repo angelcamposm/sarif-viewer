@@ -211,41 +211,15 @@ export const DetailsPanel: React.FC<DetailsPanelProps> = ({
         )}
 
         {activeTab === 'dataflow' && hasDataflow && (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-zinc-800">
-              <div className="flex items-center gap-2">
-                <Zap className="w-4 h-4 text-amber-500" />
-                <h3 className="font-bold text-sm text-slate-900 dark:text-zinc-100">
-                  Dataflow Taint Path
-                </h3>
-              </div>
-              <span className="text-xs text-slate-500 dark:text-zinc-400 font-mono">
-                {dataflowStepsCount} step(s) recorded
-              </span>
-            </div>
-            <DataflowStepper codeFlows={finding.codeFlows!} />
-          </div>
+          <DataflowStepper codeFlows={finding.codeFlows!} />
         )}
 
         {activeTab === 'fixes' && hasFixes && (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-zinc-800">
-              <div className="flex items-center gap-2">
-                <Wrench className="w-4 h-4 text-blue-500" />
-                <h3 className="font-bold text-sm text-slate-900 dark:text-zinc-100">
-                  Automated Fix Patch
-                </h3>
-              </div>
-              <span className="text-xs text-slate-500 dark:text-zinc-400 font-mono">
-                {fixesCount} remediation patch(es)
-              </span>
-            </div>
-            <FixDiffViewer
-              fixes={finding.fixes!}
-              originalSnippet={finding.codeSnippet}
-              findingFilePath={finding.filePath}
-            />
-          </div>
+          <FixDiffViewer
+            fixes={finding.fixes!}
+            originalSnippet={finding.codeSnippet}
+            findingFilePath={finding.filePath}
+          />
         )}
 
         {activeTab === 'context' && (

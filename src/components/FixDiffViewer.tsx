@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { NormalizedFix } from '../types/viewer';
-import { Wrench, Copy, Check, FileCode } from 'lucide-react';
+import { Copy, Check, FileCode, Wrench } from 'lucide-react';
 
 interface FixDiffViewerProps {
   fixes: NormalizedFix[];
@@ -20,43 +20,32 @@ export const FixDiffViewer: React.FC<FixDiffViewerProps> = ({ fixes, originalSni
   };
 
   return (
-    <div className="bg-slate-50 dark:bg-zinc-950/80 rounded-xl border border-slate-200 dark:border-zinc-800 overflow-hidden flex flex-col transition-colors duration-200">
-      {/* Header */}
-      <div className="p-3.5 bg-white dark:bg-zinc-900 border-b border-slate-200 dark:border-zinc-800 flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg bg-emerald-50 dark:bg-emerald-950/80 flex items-center justify-center text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
-            <Wrench className="w-4 h-4" />
-          </div>
-          <div>
-            <h4 className="text-xs font-bold text-slate-900 dark:text-zinc-100 flex items-center gap-1.5">
-              <span>Automated Remediation / Fix</span>
-              <span className="px-1.5 py-0.2 bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 rounded text-[10px] font-mono font-semibold">
-                {fixes.length} Available
-              </span>
-            </h4>
-            <p className="text-[11px] text-slate-500 dark:text-zinc-400">
-              Suggested code patch from static analysis engine
-            </p>
-          </div>
+    <div className="space-y-4">
+      {/* Top Fixes Status Bar */}
+      <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-zinc-800 text-xs">
+        <div className="flex items-center gap-1.5 font-medium text-slate-700 dark:text-zinc-300">
+          <Wrench className="w-3.5 h-3.5 text-blue-500" />
+          <span>Suggested Remediation Patch</span>
         </div>
+        <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-semibold bg-blue-100 dark:bg-blue-950/60 text-blue-800 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+          {fixes.length} patch(es) available
+        </span>
       </div>
 
-      <div className="p-4 space-y-4">
+      <div className="space-y-4">
         {fixes.map((fix, fixIdx) => (
           <div key={`fix-${fix.description || fixIdx}`} className="space-y-3">
             {fix.description && (
-              <div className="p-2.5 bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/60 rounded-lg text-xs text-emerald-900 dark:text-emerald-200 font-medium">
+              <div className="p-2.5 bg-blue-50/50 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900/50 rounded-lg text-xs text-blue-900 dark:text-blue-200 font-medium leading-relaxed">
                 {fix.description}
               </div>
             )}
 
             {fix.artifactChanges.map((change, changeIdx) => (
               <div key={`change-${change.filePath}-${changeIdx}`} className="space-y-2">
-                <div className="flex items-center justify-between text-xs text-slate-600 dark:text-zinc-300 font-mono">
-                  <div className="flex items-center gap-1.5">
-                    <FileCode className="w-3.5 h-3.5 text-slate-400" />
-                    <span className="font-semibold">{change.filePath}</span>
-                  </div>
+                <div className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-zinc-300 font-mono">
+                  <FileCode className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                  <span className="font-semibold break-all">{change.filePath}</span>
                 </div>
 
                 {change.replacements.map((rep, repIdx) => {
@@ -64,7 +53,7 @@ export const FixDiffViewer: React.FC<FixDiffViewerProps> = ({ fixes, originalSni
                   return (
                     <div
                       key={`rep-${rep.deletedRegion.startLine}-${rep.deletedRegion.endLine}-${repIdx}`}
-                      className="bg-slate-900 dark:bg-black rounded-lg border border-slate-800 overflow-hidden font-mono text-xs shadow-2xs"
+                      className="bg-slate-900 dark:bg-black rounded-lg border border-slate-800 overflow-hidden font-mono text-xs shadow-inner"
                     >
                       <div className="px-3 py-1.5 bg-slate-800/90 dark:bg-zinc-900/90 border-b border-slate-700/50 flex items-center justify-between text-[11px] text-slate-400">
                         <span>Lines {rep.deletedRegion.startLine} - {rep.deletedRegion.endLine}</span>

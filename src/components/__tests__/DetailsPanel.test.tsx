@@ -150,8 +150,8 @@ describe('DetailsPanel Component', () => {
     const dataflowTab = screen.getByRole('button', { name: /dataflow/i });
     fireEvent.click(dataflowTab);
 
-    expect(screen.getByText(/dataflow taint path/i)).toBeDefined();
-    expect(screen.getByText(/2 step\(s\) recorded/i)).toBeDefined();
+    expect(screen.getByText(/step 1 of 2/i)).toBeDefined();
+    expect(screen.getByText(/taint source/i)).toBeDefined();
     expect(screen.getByText('User input entrypoint')).toBeDefined();
   });
 
@@ -167,8 +167,8 @@ describe('DetailsPanel Component', () => {
     const remediationTab = screen.getByRole('button', { name: /remediation/i });
     fireEvent.click(remediationTab);
 
-    expect(screen.getByText(/automated fix patch/i)).toBeDefined();
-    expect(screen.getByText(/1 remediation patch\(es\)/i)).toBeDefined();
+    expect(screen.getByText(/suggested remediation patch/i)).toBeDefined();
+    expect(screen.getByText(/1 patch\(es\) available/i)).toBeDefined();
     expect(screen.getByText(/use parameterized query binding/i)).toBeDefined();
   });
 
@@ -204,7 +204,7 @@ describe('DetailsPanel Component', () => {
     // Switch to Dataflow tab
     const dataflowTab = screen.getByRole('button', { name: /dataflow/i });
     fireEvent.click(dataflowTab);
-    expect(screen.getByText(/dataflow taint path/i)).toBeDefined();
+    expect(screen.getByText(/step 1 of 2/i)).toBeDefined();
 
     // Rerender with a new finding
     rerender(
@@ -217,7 +217,7 @@ describe('DetailsPanel Component', () => {
 
     // Active tab automatically resets to Overview
     expect(screen.getByText('Finding Overview')).toBeDefined();
-    expect(screen.queryByText(/dataflow taint path/i)).toBeNull();
+    expect(screen.queryByText(/step 1 of 2/i)).toBeNull();
   });
 
   it('triggers onToggleMute and onViewRawSarif from header buttons', () => {
