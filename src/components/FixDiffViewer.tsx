@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { NormalizedFix, NormalizedReplacement } from '../types/viewer';
 import { Copy, Check, FileCode, Wrench } from 'lucide-react';
+import { HighlightedCode } from './HighlightedCode';
 
 interface FixDiffViewerProps {
   fixes: NormalizedFix[];
@@ -152,7 +153,12 @@ export const FixDiffViewer: React.FC<FixDiffViewerProps> = ({ fixes, originalSni
 
                                 {/* Code Content */}
                                 <td className="py-2 pl-2.5 pr-4 whitespace-pre leading-relaxed font-mono align-top">
-                                  <code>{lineItem.content}</code>
+                                  <HighlightedCode
+                                    code={lineItem.content}
+                                    filePath={change.filePath}
+                                    isDiffDeleted={isDeleted}
+                                    isDiffInserted={!isDeleted}
+                                  />
                                 </td>
                               </tr>
                             );

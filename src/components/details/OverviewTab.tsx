@@ -3,6 +3,7 @@ import { NormalizedFinding } from '../../types/viewer';
 import { TagChip } from '../ui/Badge';
 import { TaxonomyBadge } from '../ui/TaxonomyBadge';
 import { renderSafeMarkdown } from '../../utils/sanitize';
+import { HighlightedCode } from '../HighlightedCode';
 import {
   Copy,
   Check,
@@ -117,7 +118,7 @@ const PrimaryLocationSection: React.FC<{
           <div className="text-xs text-slate-500 dark:text-zinc-400 font-medium mb-1.5">Source Snippet</div>
           <div className="bg-white dark:bg-zinc-950 text-slate-800 dark:text-zinc-200 p-3 rounded-lg font-mono text-xs overflow-x-auto border border-slate-200 dark:border-zinc-800 shadow-2xs">
             <span className="text-slate-400 dark:text-zinc-500 mr-2 select-none">{finding.line || 1}</span>
-            <code>{finding.codeSnippet}</code>
+            <HighlightedCode code={finding.codeSnippet} filePath={finding.filePath} />
           </div>
         </div>
       )}

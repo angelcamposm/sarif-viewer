@@ -9,6 +9,7 @@ import {
   FileCode,
   Terminal,
 } from 'lucide-react';
+import { HighlightedCode } from './HighlightedCode';
 
 interface DataflowStepperProps {
   codeFlows: NormalizedCodeFlow[];
@@ -187,7 +188,7 @@ export const DataflowStepper: React.FC<DataflowStepperProps> = ({ codeFlows }) =
                 Source Snippet
               </div>
               <div className="bg-white dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-lg p-3 font-mono text-xs overflow-x-auto text-slate-800 dark:text-zinc-200 leading-relaxed shadow-2xs">
-                <pre><code>{currentStep.codeSnippet}</code></pre>
+                <pre><HighlightedCode code={currentStep.codeSnippet} filePath={currentStep.filePath} /></pre>
               </div>
             </div>
           )}
