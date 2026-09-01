@@ -167,9 +167,9 @@ describe('DetailsPanel Component', () => {
     const remediationTab = screen.getByRole('button', { name: /remediation/i });
     fireEvent.click(remediationTab);
 
-    expect(screen.getByText(/suggested remediation patch/i)).toBeDefined();
-    expect(screen.getByText(/1 patch\(es\) available/i)).toBeDefined();
     expect(screen.getByText(/use parameterized query binding/i)).toBeDefined();
+    expect(screen.getByText(/Lines 42 - 42/i)).toBeDefined();
+    expect(screen.getByRole('button', { name: /copy replacement/i })).toBeDefined();
   });
 
   it('switches to Rule & Context tab on click', () => {
