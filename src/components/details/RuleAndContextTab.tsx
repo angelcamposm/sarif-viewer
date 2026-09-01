@@ -1,7 +1,6 @@
 import React from 'react';
 import { NormalizedFinding } from '../../types/viewer';
 import { RelatedLocationsList } from '../RelatedLocationsList';
-import { WebRequestInspector } from '../WebRequestInspector';
 import { formatVersion } from '../../utils/formatters';
 import {
   ExternalLink,
@@ -102,12 +101,6 @@ export const RuleAndContextTab: React.FC<RuleAndContextTabProps> = ({
   return (
     <div className="space-y-5">
       <RuleDocumentationSection finding={finding} />
-
-      {(finding.webRequest || finding.webResponse) && (
-        <section className="pt-4 border-t border-slate-200 dark:border-zinc-800">
-          <WebRequestInspector webRequest={finding.webRequest} webResponse={finding.webResponse} />
-        </section>
-      )}
 
       {finding.relatedLocations && finding.relatedLocations.length > 0 && (
         <section className="pt-4 border-t border-slate-200 dark:border-zinc-800">

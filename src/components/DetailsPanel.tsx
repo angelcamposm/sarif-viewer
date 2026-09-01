@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { NormalizedFinding } from '../types/viewer';
 import { DataflowStepper } from './DataflowStepper';
 import { FixDiffViewer } from './FixDiffViewer';
+import { WebRequestInspector } from './WebRequestInspector';
 import { OverviewTab } from './details/OverviewTab';
 import { RuleAndContextTab } from './details/RuleAndContextTab';
 import {
@@ -12,10 +13,11 @@ import {
   FileText,
   Zap,
   Wrench,
+  Globe,
   BookOpen,
 } from 'lucide-react';
 
-export type DetailsTabId = 'overview' | 'dataflow' | 'fixes' | 'context';
+export type DetailsTabId = 'overview' | 'dataflow' | 'fixes' | 'traffic' | 'context';
 
 interface DetailsPanelProps {
   finding: NormalizedFinding | null;
@@ -108,6 +110,8 @@ export const DetailsPanel: React.FC<DetailsPanelProps> = ({
   const hasFixes = Boolean(finding?.fixes && finding.fixes.length > 0);
   const fixesCount = finding?.fixes?.length || 0;
 
+  const hasTraffic = Boolean(finding?.webRequest || finding?.webResponse);
+
   if (!finding) {
     return (
       <div className="bg-white dark:bg-zinc-900 rounded-lg border border-slate-200 dark:border-zinc-800 p-8 text-center text-slate-400 dark:text-zinc-500 shadow-2xs">
@@ -185,6 +189,26 @@ export const DetailsPanel: React.FC<DetailsPanelProps> = ({
           </button>
         )}
 
+        {hasTraffic && (
+          <button
+            type="button"
+            onClick={() => setActiveTab('traffic')}
+            className={`inline-flex items-center gap-1.5 py-3 px-3 text-xs font-semibold transition-all border-b-2 -mb-px cursor-pointer whitespace-nowrap ${
+              activeTab === 'traffic'
+                ? 'border-blue-600 dark:border-blue-400 text-blue-600 dark:text-blue-400'
+                : 'border-transparent text-slate-500 dark:text-zinc-400 hover:text-slate-800 dark:hover:text-zinc-200 hover:border-slate-300 dark:hover:border-zinc-700'
+            }`}
+          >
+            <Globe className="w-3.5 h-3.5 text-indigo-500" />
+            <span>HTTP Traffic</span>
+            {finding.webRequest?.method && (
+              <span className="px-1.5 py-0.2 rounded text-[10px] bg-indigo-100 dark:bg-indigo-950/60 text-indigo-800 dark:text-indigo-300 font-bold border border-indigo-200 dark:border-indigo-800/80 uppercase">
+                {finding.webRequest.method}
+              </span>
+            )}
+          </button>
+        )}
+
         <button
           type="button"
           onClick={() => setActiveTab('context')}
@@ -219,6 +243,13 @@ export const DetailsPanel: React.FC<DetailsPanelProps> = ({
             fixes={finding.fixes!}
             originalSnippet={finding.codeSnippet}
             findingFilePath={finding.filePath}
+          />
+        )}
+
+        {activeTab === 'traffic' && hasTraffic && (
+          <WebRequestInspector
+            webRequest={finding.webRequest}
+            webResponse={finding.webResponse}
           />
         )}
 

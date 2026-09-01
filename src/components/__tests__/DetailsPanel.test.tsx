@@ -83,6 +83,29 @@ const mockFindingWithFlowAndFix: NormalizedFinding = {
   ],
 };
 
+const mockFindingWithTraffic: NormalizedFinding = {
+  ...mockFindingBasic,
+  id: 'finding-dast',
+  webRequest: {
+    method: 'POST',
+    target: 'https://example.com/api/login',
+    headers: {
+      'Content-Type': 'application/json',
+      'User-Agent': 'OWASP-ZAP',
+    },
+    body: '{"username":"admin\' OR 1=1--"}',
+  },
+  webResponse: {
+    protocol: 'HTTP/1.1',
+    statusCode: 200,
+    reasonPhrase: 'OK',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: '{"status":"success","role":"admin"}',
+  },
+};
+
 describe('DetailsPanel Component', () => {
   it('renders placeholder when no finding is selected', () => {
     render(<DetailsPanel finding={null} onToggleMute={vi.fn()} />);
@@ -168,7 +191,7 @@ describe('DetailsPanel Component', () => {
     fireEvent.click(remediationTab);
 
     expect(screen.getByText(/use parameterized query binding/i)).toBeDefined();
-    expect(screen.getByText('src/controllers/UserController.ts')).toBeDefined();
+    expect(screen.getByText('src/controllers/userController.ts')).toBeDefined();
     expect(screen.getByRole('button', { name: /copy replacement/i })).toBeDefined();
   });
 
@@ -190,6 +213,30 @@ describe('DetailsPanel Component', () => {
     expect(screen.getByText('report.sarif')).toBeDefined();
     expect(screen.getByText(/CodeQL/i)).toBeDefined();
     expect(screen.getByText('v2.14.0')).toBeDefined();
+  });
+
+  it('renders HTTP Traffic tab when finding has webRequest and toggles request/response', () => {
+    render(
+      <DetailsPanel
+        finding={mockFindingWithTraffic}
+        reportFileName="report.sarif"
+        onToggleMute={vi.fn()}
+      />
+    );
+
+    const trafficTab = screen.getByRole('button', { name: /http traffic/i });
+    expect(trafficTab).toBeDefined();
+    fireEvent.click(trafficTab);
+
+    // Default request view
+    expect(screen.getByText('https://example.com/api/login')).toBeDefined();
+    expect(screen.getByText('OWASP-ZAP')).toBeDefined();
+
+    // Toggle to response
+    const responseBtn = screen.getByRole('button', { name: /response/i });
+    fireEvent.click(responseBtn);
+    expect(screen.getAllByText(/200/).length).toBeGreaterThan(0);
+    expect(screen.getByText(/HTTP\/1.1/)).toBeDefined();
   });
 
   it('resets to Overview tab when selecting a new finding', () => {
