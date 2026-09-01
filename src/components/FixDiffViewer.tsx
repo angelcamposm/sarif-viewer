@@ -133,25 +133,25 @@ export const FixDiffViewer: React.FC<FixDiffViewerProps> = ({ fixes, originalSni
                               <tr key={`line-${idx}`} className={`transition-colors ${rowBg}`}>
                                 {/* Old Line Number */}
                                 <td
-                                  className={`w-10 min-w-[2.5rem] text-right pr-2 py-0.5 text-slate-400 dark:text-zinc-500 select-none text-[11px] border-r ${gutterBorder}`}
+                                  className={`w-10 min-w-[2.5rem] text-right pr-2.5 py-2 text-slate-400 dark:text-zinc-500 select-none text-[11px] align-top border-r ${gutterBorder}`}
                                 >
                                   {lineItem.oldLineNumber || ''}
                                 </td>
 
                                 {/* New Line Number */}
                                 <td
-                                  className={`w-10 min-w-[2.5rem] text-right pr-2 py-0.5 text-slate-400 dark:text-zinc-500 select-none text-[11px] border-r ${gutterBorder}`}
+                                  className={`w-10 min-w-[2.5rem] text-right pr-2.5 py-2 text-slate-400 dark:text-zinc-500 select-none text-[11px] align-top border-r ${gutterBorder}`}
                                 >
                                   {lineItem.newLineNumber || ''}
                                 </td>
 
                                 {/* Sign Symbol (+ / -) */}
-                                <td className={`w-5 min-w-[1.25rem] text-center py-0.5 select-none font-bold text-[11px] ${signColor}`}>
+                                <td className={`w-5 min-w-[1.25rem] text-center py-2 select-none font-bold text-[11px] align-top ${signColor}`}>
                                   {isDeleted ? '-' : '+'}
                                 </td>
 
                                 {/* Code Content */}
-                                <td className="py-0.5 pl-2 pr-4 whitespace-pre leading-relaxed font-mono">
+                                <td className="py-2 pl-2.5 pr-4 whitespace-pre leading-relaxed font-mono align-top">
                                   <code>{lineItem.content}</code>
                                 </td>
                               </tr>
