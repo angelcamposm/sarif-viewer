@@ -100,10 +100,13 @@ const MuteForm: React.FC<MuteFormProps> = ({
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
     if (isAlreadyMuted) {
-      onConfirmUnmute(finding.id);
+      onConfirmUnmute(finding.fingerprint || finding.id);
+      if (finding.muteRecord?.id && finding.muteRecord.id !== finding.fingerprint) {
+        onConfirmUnmute(finding.muteRecord.id);
+      }
     } else {
       onConfirmMute({
-        id: finding.id,
+        id: finding.fingerprint || finding.id,
         ruleId: finding.ruleId,
         filePath: finding.filePath,
         line: finding.line ?? undefined,

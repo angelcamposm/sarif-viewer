@@ -288,4 +288,28 @@ describe('DetailsPanel Component', () => {
     fireEvent.click(rawBtn);
     expect(onViewRawSarif).toHaveBeenCalledWith(mockFindingBasic);
   });
+
+  it('renders SonarQube HTML in Rule & Context tab with rich headings and lists', () => {
+    const findingWithHtmlDoc: NormalizedFinding = {
+      ...mockFindingBasic,
+      ruleDescription: '<p>Formatting SQL queries is security-sensitive.</p>',
+      ruleFullDescription: '<h2>Why is this an issue?</h2><p>Executing raw SQL queries is vulnerable to injection.</p><ul><li>Use parameterized queries</li></ul>',
+    };
+
+    render(
+      <DetailsPanel
+        finding={findingWithHtmlDoc}
+        reportFileName="sonarqube.sarif"
+        onToggleMute={vi.fn()}
+      />
+    );
+
+    // Switch to Rule & Context tab
+    const ruleTab = screen.getByRole('button', { name: /rule & context/i });
+    fireEvent.click(ruleTab);
+
+    expect(screen.getByRole('heading', { level: 2, name: 'Why is this an issue?' })).toBeDefined();
+    expect(screen.getByText('Formatting SQL queries is security-sensitive.')).toBeDefined();
+    expect(screen.getByText('Use parameterized queries')).toBeDefined();
+  });
 });

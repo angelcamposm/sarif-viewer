@@ -61,8 +61,14 @@ function buildSarifRunExport(runSummary: SarifRunSummary, findingsToExport: Norm
         name: runSummary.toolName,
         version: runSummary.toolVersion,
         informationUri: runSummary.toolInformationUri,
+        ...(runSummary.driverRules && runSummary.driverRules.length > 0 ? { rules: runSummary.driverRules } : {}),
       },
+      ...(runSummary.extensions && runSummary.extensions.length > 0 ? { extensions: runSummary.extensions } : {}),
     },
+    ...(runSummary.taxonomies && runSummary.taxonomies.length > 0 ? { taxonomies: runSummary.taxonomies } : {}),
+    ...(runSummary.artifacts && runSummary.artifacts.length > 0 ? { artifacts: runSummary.artifacts } : {}),
+    ...(runSummary.invocations && runSummary.invocations.length > 0 ? { invocations: runSummary.invocations } : {}),
+    ...(runSummary.originalUriBaseIds ? { originalUriBaseIds: runSummary.originalUriBaseIds } : {}),
     properties: runSummary.properties,
     results: runFindings.map((f) => {
       const res = { ...f.rawResult };

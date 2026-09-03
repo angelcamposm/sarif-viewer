@@ -33,8 +33,8 @@ export const ReportProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   const baseReport = useMemo(() => {
     if (!rawSarif) return null;
     try {
-      const parsedJson = JSON.parse(rawSarif.content) as SarifLog;
-      return parseSarifJson(parsedJson, rawSarif.filename, {});
+      const parsed = (rawSarif as any).parsedJson || (JSON.parse(rawSarif.content) as SarifLog);
+      return parseSarifJson(parsed, rawSarif.filename, {});
     } catch (err: any) {
       console.error('Failed to parse SARIF:', err);
       return null;
@@ -47,7 +47,7 @@ export const ReportProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
     let mutedCount = 0;
     const updatedFindings = baseReport.findings.map((f) => {
-      const muteRec = mutedRecords[f.id];
+      const muteRec = (f.fingerprint ? mutedRecords[f.fingerprint] : undefined) || mutedRecords[f.id];
       const isMuted = !!muteRec || f.inSarifSuppressions?.some((s) => s.status === 'accepted') || false;
       if (isMuted) mutedCount++;
 
@@ -77,20 +77,25 @@ export const ReportProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       if (!parsedJson || typeof parsedJson !== 'object' || (!parsedJson.runs && !parsedJson.version)) {
         const msg = 'Invalid SARIF file: Missing runs array or SARIF version header.';
         setParseError(msg);
-        alert(msg);
         setIsLoading(false);
         return false;
       }
 
-      const reportPayload = { content: fileContent, filename: fileName };
+      const reportPayload = { content: fileContent, filename: fileName, parsedJson };
       setRawSarif(reportPayload);
 
-      try {
-        if (typeof window !== 'undefined' && window.sessionStorage) {
-          sessionStorage.setItem(SESSION_REPORT_KEY, JSON.stringify(reportPayload));
+      // Only cache reasonably sized files in sessionStorage (< 3MB) to prevent QuotaExceededError
+      if (fileContent.length < 3_000_000) {
+        try {
+          if (typeof window !== 'undefined' && window.sessionStorage) {
+            sessionStorage.setItem(
+              SESSION_REPORT_KEY,
+              JSON.stringify({ content: fileContent, filename: fileName })
+            );
+          }
+        } catch (storageErr) {
+          console.warn('Report caching in sessionStorage skipped:', storageErr);
         }
-      } catch (storageErr) {
-        console.warn('Report too large for sessionStorage quota, caching skipped:', storageErr);
       }
 
       setIsLoading(false);
@@ -98,7 +103,6 @@ export const ReportProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     } catch (e: any) {
       const msg = `Invalid JSON format: ${e.message}`;
       setParseError(msg);
-      alert(msg);
       setIsLoading(false);
       return false;
     }

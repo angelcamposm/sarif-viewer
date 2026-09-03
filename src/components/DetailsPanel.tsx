@@ -94,11 +94,20 @@ export const DetailsPanel: React.FC<DetailsPanelProps> = ({
   const [activeTab, setActiveTab] = useState<DetailsTabId>('overview');
   const [prevFindingId, setPrevFindingId] = useState<string | undefined>(finding?.id);
   const [copiedField, setCopiedField] = useState<string | null>(null);
+  const copyTimeoutRef = React.useRef<number | null>(null);
 
   if (finding?.id !== prevFindingId) {
     setPrevFindingId(finding?.id);
     setActiveTab('overview');
   }
+
+  React.useEffect(() => {
+    return () => {
+      if (copyTimeoutRef.current) {
+        window.clearTimeout(copyTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const uniqueTags = useMemo(() => deduplicateTags(finding?.tags), [finding?.tags]);
 
@@ -122,9 +131,12 @@ export const DetailsPanel: React.FC<DetailsPanelProps> = ({
   }
 
   const handleCopy = (text: string, fieldName: string) => {
-    navigator.clipboard.writeText(text);
+    navigator.clipboard.writeText(text).catch(() => {});
     setCopiedField(fieldName);
-    setTimeout(() => setCopiedField(null), 1500);
+    if (copyTimeoutRef.current) {
+      window.clearTimeout(copyTimeoutRef.current);
+    }
+    copyTimeoutRef.current = window.setTimeout(() => setCopiedField(null), 1500);
   };
 
   return (

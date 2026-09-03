@@ -6,7 +6,6 @@ import { useReport } from './hooks/useReport';
 import { useFilters } from './hooks/useFilters';
 import { ReportProvider } from './context/ReportContext';
 import { FilterProvider } from './context/FilterContext';
-import { useKeyboardNavigation } from './hooks/useKeyboardNavigation';
 
 // Components
 import { Header } from './components/Header';
@@ -43,12 +42,7 @@ const AppContent: React.FC = () => {
   const [isDiagnosticsOpen, setIsDiagnosticsOpen] = useState(false);
   const [rawSarifModalFinding, setRawSarifModalFinding] = useState<NormalizedFinding | null>(null);
 
-  // Keyboard navigation hook
-  useKeyboardNavigation(
-    filteredFindings,
-    selectedFinding?.id || null,
-    setSelectedFindingId
-  );
+
 
   const handleOpenMuteModal = (finding: NormalizedFinding) => {
     setModalFinding(finding);
@@ -125,6 +119,7 @@ const AppContent: React.FC = () => {
               {/* Right Column: Deep Findings Detail Panel */}
               <div className="lg:col-span-5 xl:col-span-5 flex flex-col sticky top-20">
                 <DetailsPanel
+                  key={selectedFinding?.id || 'empty'}
                   finding={selectedFinding}
                   reportFileName={report.fileName}
                   onToggleMute={handleOpenMuteModal}

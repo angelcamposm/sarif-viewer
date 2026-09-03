@@ -33,7 +33,7 @@ import { resolveEffectiveLevel, normalizeSarifLevel } from './criticalityEngine'
 import { extractApplicationMetadata } from './metadataExtractor';
 import { generateDeterministicHash } from '../utils/hash';
 import { resolveArtifactPath } from './uriResolver';
-import { resolveTaxonomies } from './taxonomyResolver';
+import { resolveTaxonomies, buildTaxonomyCatalogMap } from './taxonomyResolver';
 import { extractSnippetFromArtifacts } from './snippetExtractor';
 
 interface RuleIndexes {
@@ -85,8 +85,8 @@ function resolveFindingRule(
   const defaultRuleId = `RULE-${runIndex + 1}-${resultIndex + 1}`;
   const ruleId = result.ruleId || matchedRule?.id || defaultRuleId;
   const ruleName = matchedRule?.name || matchedRule?.shortDescription?.text;
-  const ruleDescription = matchedRule?.shortDescription?.text || matchedRule?.fullDescription?.text;
-  const ruleFullDescription = matchedRule?.fullDescription?.text || matchedRule?.shortDescription?.text;
+  const ruleDescription = matchedRule?.shortDescription?.markdown || matchedRule?.shortDescription?.text || matchedRule?.fullDescription?.markdown || matchedRule?.fullDescription?.text;
+  const ruleFullDescription = matchedRule?.fullDescription?.markdown || matchedRule?.fullDescription?.text || matchedRule?.help?.markdown || matchedRule?.help?.text || matchedRule?.shortDescription?.markdown || matchedRule?.shortDescription?.text;
   const ruleHelpUri = matchedRule?.helpUri;
 
   return { ruleId, matchedRule, ruleName, ruleDescription, ruleFullDescription, ruleHelpUri };
@@ -304,6 +304,7 @@ function parseResultFixes(fixes?: Fix[], run?: Run): NormalizedFix[] | undefined
 
   return fixes.map((fx) => ({
     description: fx.description?.text,
+    descriptionMarkdown: fx.description?.markdown,
     artifactChanges: (fx.artifactChanges || []).map((ac) => mapArtifactChange(ac, run)),
   }));
 }
@@ -424,7 +425,8 @@ function normalizeSingleResult(
   runIndex: number,
   ruleIndexes: RuleIndexes,
   fileName: string,
-  mutedRecords: Record<string, MuteRecord>
+  mutedRecords: Record<string, MuteRecord>,
+  taxonomyCatalogMap?: Map<string, any>
 ): NormalizedFinding {
   const driver = run.tool?.driver || { name: 'Static Analysis Tool' };
   const artifacts = Array.isArray(run.artifacts) ? run.artifacts : [];
@@ -441,7 +443,8 @@ function normalizeSingleResult(
     result.taxa,
     taxonomiesCatalog,
     matchedRule?.relationships || [],
-    tags
+    tags,
+    taxonomyCatalogMap
   );
 
   const baselineLevel: SarifLevel = normalizeSarifLevel(
@@ -464,11 +467,12 @@ function normalizeSingleResult(
 
   const findingId = `${fileName}#r${runIndex}_res${resultIndex}_${fingerprint}`;
   const inSarifSuppressions = parseResultSuppressions(result.suppressions);
-  const muteRec = mutedRecords[findingId] || mutedRecords[fingerprint];
+  const muteRec = mutedRecords[fingerprint] || mutedRecords[findingId];
   const isMuted = !!muteRec || inSarifSuppressions.some((s) => s.status === 'accepted');
 
   return {
     id: findingId,
+    fingerprint,
     runIndex,
     resultIndex,
     toolName: driver.name || 'Static Analysis Tool',
@@ -541,6 +545,8 @@ export function parseSarifJson(
     const ruleIndexes = buildRuleIndexes(driverRules, run.tool?.extensions);
     const runResults = Array.isArray(run.results) ? run.results : [];
     const runMetadata = extractApplicationMetadata(run, sarif.properties);
+    const taxonomiesCatalog = Array.isArray(run.taxonomies) ? run.taxonomies : [];
+    const taxonomyCatalogMap = buildTaxonomyCatalogMap(taxonomiesCatalog);
 
     runResults.forEach((result: Result, resultIndex: number) => {
       const normalized = normalizeSingleResult(
@@ -550,7 +556,8 @@ export function parseSarifJson(
         runIndex,
         ruleIndexes,
         fileName,
-        mutedRecords
+        mutedRecords,
+        taxonomyCatalogMap
       );
 
       allFindings.push(normalized);
@@ -593,6 +600,11 @@ export function parseSarifJson(
       invocations: run.invocations,
       metadata: runMetadata,
       properties: run.properties,
+      driverRules: driverRules.length > 0 ? driverRules : undefined,
+      extensions: run.tool?.extensions,
+      taxonomies: run.taxonomies,
+      artifacts: run.artifacts,
+      originalUriBaseIds: run.originalUriBaseIds,
     });
   });
 

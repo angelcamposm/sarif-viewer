@@ -68,4 +68,22 @@ describe('MuteStorage Service', () => {
     muteStorage.unmute('sub_test_1');
     expect(notified).toBe(1); // Not called after unsubscribe
   });
+
+  it('matches findings cross-scan via fingerprint or legacy composite ID', () => {
+    // Stored with fingerprint
+    muteStorage.mute({
+      id: 'find_abcdef12',
+      ruleId: 'SEC001',
+      reason: 'False Positive',
+      mutedAt: new Date().toISOString(),
+    });
+
+    // Querying with full composite ID from a different scan/file
+    expect(muteStorage.isMuted('new-scan.sarif#r0_res0_find_abcdef12')).toBe(true);
+    expect(muteStorage.get('new-scan.sarif#r0_res0_find_abcdef12')?.ruleId).toBe('SEC001');
+
+    // Unmuting with composite ID cleans up the fingerprint record
+    muteStorage.unmute('new-scan.sarif#r0_res0_find_abcdef12');
+    expect(muteStorage.isMuted('find_abcdef12')).toBe(false);
+  });
 });

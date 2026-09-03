@@ -58,7 +58,10 @@ export const HighlightedCode: React.FC<HighlightedCodeProps> = ({
   isDiffDeleted = false,
   isDiffInserted = false,
 }) => {
-  const tokens = tokenizeCode(code, language, filePath);
+  const tokens = React.useMemo(
+    () => tokenizeCode(code, language, filePath),
+    [code, language, filePath]
+  );
 
   return (
     <code>

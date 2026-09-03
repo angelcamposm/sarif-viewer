@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { NormalizedFix, NormalizedReplacement } from '../types/viewer';
 import { Copy, Check, FileCode, Wrench } from 'lucide-react';
 import { HighlightedCode } from './HighlightedCode';
+import { RichContent } from './ui/RichContent';
 
 interface FixDiffViewerProps {
   fixes: NormalizedFix[];
@@ -53,14 +54,26 @@ function buildDiffLines(
 }
 
 export const FixDiffViewer: React.FC<FixDiffViewerProps> = ({ fixes, originalSnippet, findingFilePath }) => {
-  const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  const copyTimeoutRef = React.useRef<number | null>(null);
+
+  React.useEffect(() => {
+    return () => {
+      if (copyTimeoutRef.current) {
+        window.clearTimeout(copyTimeoutRef.current);
+      }
+    };
+  }, []);
 
   if (!fixes || fixes.length === 0) return null;
 
-  const handleCopyReplacement = (text: string, index: number) => {
-    navigator.clipboard.writeText(text);
-    setCopiedIndex(index);
-    setTimeout(() => setCopiedIndex(null), 2000);
+  const handleCopyReplacement = (text: string, key: string) => {
+    navigator.clipboard.writeText(text).catch(() => {});
+    setCopiedKey(key);
+    if (copyTimeoutRef.current) {
+      window.clearTimeout(copyTimeoutRef.current);
+    }
+    copyTimeoutRef.current = window.setTimeout(() => setCopiedKey(null), 2000);
   };
 
   return (
@@ -68,10 +81,12 @@ export const FixDiffViewer: React.FC<FixDiffViewerProps> = ({ fixes, originalSni
       {fixes.map((fix, fixIdx) => (
         <div key={`fix-${fix.description || fixIdx}`} className="space-y-3">
           {/* Fix Description */}
-          {fix.description && (
-            <div className="flex items-start gap-2 text-xs text-slate-700 dark:text-zinc-300 font-medium leading-relaxed">
+          {(fix.description || fix.descriptionMarkdown) && (
+            <div className="flex items-start gap-2 text-xs text-slate-700 dark:text-zinc-300 font-medium leading-relaxed bg-slate-50/50 dark:bg-zinc-950/40 p-2.5 rounded-lg border border-slate-200/80 dark:border-zinc-800/80">
               <Wrench className="w-3.5 h-3.5 text-blue-500 shrink-0 mt-0.5" />
-              <span>{fix.description}</span>
+              <div className="flex-1 min-w-0">
+                <RichContent text={fix.description} markdown={fix.descriptionMarkdown} />
+              </div>
             </div>
           )}
 
@@ -79,7 +94,8 @@ export const FixDiffViewer: React.FC<FixDiffViewerProps> = ({ fixes, originalSni
           {fix.artifactChanges.map((change, changeIdx) => (
             <div key={`change-${change.filePath}-${changeIdx}`} className="space-y-2">
               {change.replacements.map((rep, repIdx) => {
-                const isCopied = copiedIndex === fixIdx * 100 + repIdx;
+                const repKey = `${fixIdx}-${changeIdx}-${repIdx}`;
+                const isCopied = copiedKey === repKey;
                 const diffLines = buildDiffLines(rep, originalSnippet, findingFilePath, change.filePath);
 
                 return (
@@ -99,7 +115,7 @@ export const FixDiffViewer: React.FC<FixDiffViewerProps> = ({ fixes, originalSni
                       {rep.insertedContent && (
                         <button
                           type="button"
-                          onClick={() => handleCopyReplacement(rep.insertedContent!, fixIdx * 100 + repIdx)}
+                          onClick={() => handleCopyReplacement(rep.insertedContent!, repKey)}
                           className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-white dark:bg-zinc-800 hover:bg-slate-100 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-200 border border-slate-200 dark:border-zinc-700 shadow-2xs transition-colors cursor-pointer text-[11px] font-sans font-medium whitespace-nowrap"
                         >
                           {isCopied ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3 text-slate-500 dark:text-zinc-400" />}

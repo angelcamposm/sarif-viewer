@@ -153,4 +153,82 @@ describe('SARIF Parser & Normalizer', () => {
     expect(finding.tags).toHaveLength(uniqueLowerTags.length);
     expect(finding.tags).toEqual(['cwe-89', 'custom-tag', 'security', 'database']);
   });
+
+  it('correctly parses SonarQube-style rule fullDescription with embedded HTML and fix descriptions', () => {
+    const sonarqubeSarif = {
+      version: '2.1.0',
+      runs: [
+        {
+          tool: {
+            driver: {
+              name: 'SonarQube Scanner',
+              rules: [
+                {
+                  id: 'java:S2077',
+                  name: 'Formatting SQL queries is security-sensitive',
+                  shortDescription: {
+                    text: 'Formatting SQL queries is security-sensitive',
+                  },
+                  fullDescription: {
+                    text: '<h2>Why is this an issue?</h2><p>Executing raw SQL queries with concatenated input is vulnerable to SQL Injection.</p><h3>Compliant Solution</h3><pre><code>PreparedStatement stmt = conn.prepareStatement(query);</code></pre>',
+                  },
+                  helpUri: 'https://rules.sonarsource.com/java/RSPEC-2077',
+                },
+              ],
+            },
+          },
+          results: [
+            {
+              ruleId: 'java:S2077',
+              level: 'error' as const,
+              message: {
+                text: 'Use a parameterized query instead.',
+              },
+              locations: [
+                {
+                  physicalLocation: {
+                    artifactLocation: { uri: 'src/main/java/UserDao.java' },
+                    region: { startLine: 42, startColumn: 10 },
+                  },
+                },
+              ],
+              fixes: [
+                {
+                  description: {
+                    text: '<p>Replace string concatenation with <code>PreparedStatement</code> parameter binding.</p>',
+                    markdown: 'Replace string concatenation with `PreparedStatement` parameter binding.',
+                  },
+                  artifactChanges: [
+                    {
+                      artifactLocation: { uri: 'src/main/java/UserDao.java' },
+                      replacements: [
+                        {
+                          deletedRegion: { startLine: 42, startColumn: 10, endLine: 42, endColumn: 50 },
+                          insertedContent: { text: 'stmt.setString(1, userId);' },
+                        },
+                      ],
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+
+    const report = parseSarifJson(sonarqubeSarif, 'sonarqube_report.sarif');
+    expect(report.totalFindings).toBe(1);
+
+    const finding = report.findings[0];
+    expect(finding.ruleId).toBe('java:S2077');
+    expect(finding.ruleFullDescription).toContain('<h2>Why is this an issue?</h2>');
+    expect(finding.ruleFullDescription).toContain('<h3>Compliant Solution</h3>');
+    expect(finding.ruleHelpUri).toBe('https://rules.sonarsource.com/java/RSPEC-2077');
+
+    expect(finding.fixes).toBeDefined();
+    expect(finding.fixes?.[0].description).toContain('<p>Replace string concatenation');
+    expect(finding.fixes?.[0].descriptionMarkdown).toContain('`PreparedStatement`');
+  });
 });
+

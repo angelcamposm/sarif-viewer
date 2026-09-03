@@ -2,6 +2,8 @@ import React from 'react';
 import { NormalizedFinding } from '../../types/viewer';
 import { RelatedLocationsList } from '../RelatedLocationsList';
 import { formatVersion } from '../../utils/formatters';
+import { RichContent } from '../ui/RichContent';
+import { isSafeUri } from '../../utils/sanitize';
 import {
   ExternalLink,
   Toolbox,
@@ -32,8 +34,8 @@ const RuleDocumentationSection: React.FC<{ finding: NormalizedFinding }> = ({ fi
     {finding.ruleDescription && (
       <div>
         <div className="text-xs text-slate-500 dark:text-zinc-400 font-medium mb-1">Summary</div>
-        <div className="text-slate-700 dark:text-zinc-300 text-sm leading-relaxed bg-slate-50/60 dark:bg-zinc-950/40 p-3 rounded-lg border border-slate-200/80 dark:border-zinc-800/80">
-          {finding.ruleDescription}
+        <div className="bg-slate-50/60 dark:bg-zinc-950/40 p-3 rounded-lg border border-slate-200/80 dark:border-zinc-800/80">
+          <RichContent text={finding.ruleDescription} />
         </div>
       </div>
     )}
@@ -41,13 +43,13 @@ const RuleDocumentationSection: React.FC<{ finding: NormalizedFinding }> = ({ fi
     {finding.ruleFullDescription && finding.ruleFullDescription !== finding.ruleDescription && (
       <div>
         <div className="text-xs text-slate-500 dark:text-zinc-400 font-medium mb-1">In-depth Guidance</div>
-        <div className="text-slate-600 dark:text-zinc-400 text-xs sm:text-sm leading-relaxed bg-slate-50/40 dark:bg-zinc-950/30 p-3 rounded-lg border border-slate-200/60 dark:border-zinc-800/60">
-          {finding.ruleFullDescription}
+        <div className="bg-slate-50/40 dark:bg-zinc-950/30 p-3 rounded-lg border border-slate-200/60 dark:border-zinc-800/60">
+          <RichContent text={finding.ruleFullDescription} />
         </div>
       </div>
     )}
 
-    {finding.ruleHelpUri && (
+    {finding.ruleHelpUri && isSafeUri(finding.ruleHelpUri) && (
       <div className="pt-1">
         <a
           href={finding.ruleHelpUri}

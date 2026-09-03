@@ -34,8 +34,23 @@ export class ErrorBoundary extends Component<Props, State> {
   private readonly handleResetAll = () => {
     try {
       if (typeof window !== 'undefined') {
-        localStorage.clear();
-        sessionStorage.clear();
+        const keysToRemove: string[] = [];
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && (key.startsWith('sarif_') || key.startsWith('sarif-viewer'))) {
+            keysToRemove.push(key);
+          }
+        }
+        keysToRemove.forEach((k) => localStorage.removeItem(k));
+
+        const sessionKeysToRemove: string[] = [];
+        for (let i = 0; i < sessionStorage.length; i++) {
+          const key = sessionStorage.key(i);
+          if (key && (key.startsWith('sarif_') || key.startsWith('sarif-viewer'))) {
+            sessionKeysToRemove.push(key);
+          }
+        }
+        sessionKeysToRemove.forEach((k) => sessionStorage.removeItem(k));
       }
     } catch (e) {
       console.warn('Failed to clear storage:', e);
