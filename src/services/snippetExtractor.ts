@@ -23,11 +23,21 @@ function findTargetArtifact(
   return undefined;
 }
 
+const artifactLinesCache = new WeakMap<Artifact, string[]>();
+
+function getArtifactLines(artifact: Artifact): string[] {
+  let cached = artifactLinesCache.get(artifact);
+  if (!cached && artifact.contents?.text) {
+    cached = artifact.contents.text.split(/\r?\n/);
+    artifactLinesCache.set(artifact, cached);
+  }
+  return cached || [];
+}
+
 /**
  * Extracts a line-range slice from source text.
  */
-function extractLineRegion(text: string, region: Region): string {
-  const lines = text.split(/\r?\n/);
+function extractLineRegion(lines: string[], region: Region): string {
   const startLineIdx = Math.max(0, (region.startLine || 1) - 1);
   const endLineIdx = region.endLine !== undefined ? Math.min(lines.length, region.endLine) : startLineIdx + 1;
 
@@ -61,14 +71,12 @@ export function extractSnippetFromArtifacts(
     return undefined;
   }
 
-  const text = targetArtifact.contents.text;
-
   if (region.startLine !== undefined) {
-    return extractLineRegion(text, region);
+    return extractLineRegion(getArtifactLines(targetArtifact), region);
   }
 
   if (region.charOffset !== undefined) {
-    return extractOffsetRegion(text, region);
+    return extractOffsetRegion(targetArtifact.contents.text, region);
   }
 
   return undefined;

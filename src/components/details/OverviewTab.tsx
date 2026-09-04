@@ -2,7 +2,7 @@ import React from 'react';
 import { NormalizedFinding } from '../../types/viewer';
 import { TagChip } from '../ui/Badge';
 import { TaxonomyBadge } from '../ui/TaxonomyBadge';
-import { renderSafeMarkdown } from '../../utils/sanitize';
+import { RichContent } from '../ui/RichContent';
 import { HighlightedCode } from '../HighlightedCode';
 import {
   Copy,
@@ -177,12 +177,9 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
 
         <div>
           <div className="text-xs text-slate-500 dark:text-zinc-400 font-medium mb-1">Message</div>
-          <div
-            className="text-sm text-slate-800 dark:text-zinc-200 leading-relaxed break-words bg-slate-50/50 dark:bg-zinc-950/40 p-3 rounded-lg border border-slate-200/80 dark:border-zinc-800/80"
-            dangerouslySetInnerHTML={{
-              __html: renderSafeMarkdown(finding.messageMarkdown || finding.message),
-            }}
-          />
+          <div className="bg-slate-50/50 dark:bg-zinc-950/40 p-3 rounded-lg border border-slate-200/80 dark:border-zinc-800/80">
+            <RichContent text={finding.message} markdown={finding.messageMarkdown} />
+          </div>
         </div>
 
         {finding.taxonomies && finding.taxonomies.length > 0 && (

@@ -51,35 +51,72 @@ function getActiveLevelDisplay(selectedLevel: string) {
 const FilterSearchInput: React.FC<{
   query: string;
   onChange: (q: string) => void;
-}> = ({ query, onChange }) => (
-  <div className="flex-1">
-    <label htmlFor="search-input" className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400 mb-1.5">
-      Search Findings
-    </label>
-    <div className="relative">
-      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 dark:text-zinc-500">
-        <Search className="w-4 h-4" />
+}> = ({ query, onChange }) => {
+  const [localQuery, setLocalQuery] = useState(query);
+  const [prevPropQuery, setPrevPropQuery] = useState(query);
+  const timerRef = React.useRef<number | null>(null);
+
+  if (query !== prevPropQuery) {
+    setPrevPropQuery(query);
+    setLocalQuery(query);
+  }
+
+  const handleChange = (val: string) => {
+    setLocalQuery(val);
+    if (timerRef.current) {
+      window.clearTimeout(timerRef.current);
+    }
+    timerRef.current = window.setTimeout(() => {
+      onChange(val);
+    }, 200);
+  };
+
+  const handleClear = () => {
+    setLocalQuery('');
+    if (timerRef.current) {
+      window.clearTimeout(timerRef.current);
+    }
+    onChange('');
+  };
+
+  React.useEffect(() => {
+    return () => {
+      if (timerRef.current) {
+        window.clearTimeout(timerRef.current);
+      }
+    };
+  }, []);
+
+  return (
+    <div className="flex-1">
+      <label htmlFor="search-input" className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400 mb-1.5">
+        Search Findings
+      </label>
+      <div className="relative">
+        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 dark:text-zinc-500">
+          <Search className="w-4 h-4" />
+        </div>
+        <input
+          id="search-input"
+          type="text"
+          value={localQuery}
+          onChange={(e) => handleChange(e.target.value)}
+          placeholder="Search by rule, message, file path, tag..."
+          className="w-full pl-9 pr-8 py-2 text-xs text-slate-900 dark:text-zinc-100 bg-white dark:bg-zinc-900 border border-slate-300 dark:border-zinc-700 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder-slate-400 dark:placeholder-zinc-500 shadow-2xs transition-all"
+        />
+        {localQuery && (
+          <button
+            type="button"
+            onClick={handleClear}
+            className="absolute inset-y-0 right-0 pr-2.5 flex items-center text-slate-400 hover:text-slate-700 dark:hover:text-zinc-300 cursor-pointer"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        )}
       </div>
-      <input
-        id="search-input"
-        type="text"
-        value={query}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder="Search by rule, message, file path, tag..."
-        className="w-full pl-9 pr-8 py-2 text-xs text-slate-900 dark:text-zinc-100 bg-white dark:bg-zinc-900 border border-slate-300 dark:border-zinc-700 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder-slate-400 dark:placeholder-zinc-500 shadow-2xs transition-all"
-      />
-      {query && (
-        <button
-          type="button"
-          onClick={() => onChange('')}
-          className="absolute inset-y-0 right-0 pr-2.5 flex items-center text-slate-400 hover:text-slate-700 dark:hover:text-zinc-300 cursor-pointer"
-        >
-          <X className="w-3.5 h-3.5" />
-        </button>
-      )}
     </div>
-  </div>
-);
+  );
+};
 
 const FilterLevelDropdown: React.FC<{
   selectedLevel: string;

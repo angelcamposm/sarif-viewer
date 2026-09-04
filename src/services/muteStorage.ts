@@ -82,11 +82,16 @@ export const muteStorage = {
   },
 
   get(id: string): MuteRecord | undefined {
-    return muteStorage.getAll()[id];
+    const all = muteStorage.getAll();
+    if (all[id]) return all[id];
+    for (const [k, rec] of Object.entries(all)) {
+      if (rec.id === id || k.endsWith(`_${id}`) || id.endsWith(`_${k}`)) return rec;
+    }
+    return undefined;
   },
 
   isMuted(id: string): boolean {
-    return !!muteStorage.getAll()[id];
+    return !!this.get(id);
   },
 
   mute(record: MuteRecord): void {
@@ -99,8 +104,18 @@ export const muteStorage = {
 
   unmute(id: string): void {
     const all = { ...this.getAll() };
+    let changed = false;
     if (all[id]) {
       delete all[id];
+      changed = true;
+    }
+    for (const [k, rec] of Object.entries(all)) {
+      if (rec.id === id || k.endsWith(`_${id}`) || id.endsWith(`_${k}`)) {
+        delete all[k];
+        changed = true;
+      }
+    }
+    if (changed) {
       memoryCache = all;
       persistToLocalStorage(all);
       notifyListeners();

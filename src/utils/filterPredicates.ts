@@ -29,7 +29,7 @@ export function matchesLevelFilter(finding: NormalizedFinding, selectedLevel: st
     return finding.isLevelOverridden && finding.overrideTag?.toLowerCase() === targetTag;
   }
 
-  return finding.effectiveLevel === selectedLevel || finding.originalLevel === selectedLevel;
+  return finding.effectiveLevel === selectedLevel;
 }
 
 /**

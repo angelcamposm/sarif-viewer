@@ -46,7 +46,7 @@ function formatTaxonomyLink(taxonomyName: string, id: string): { canonicalId: st
 /**
  * Builds a catalog lookup map indexing taxon definitions by taxonomy name.
  */
-function buildTaxonomyCatalogMap(taxonomiesCatalog: ToolComponent[] = []): CatalogMap {
+export function buildTaxonomyCatalogMap(taxonomiesCatalog: ToolComponent[] = []): CatalogMap {
   const catalogMap: CatalogMap = new Map();
 
   taxonomiesCatalog.forEach((taxCat) => {
@@ -193,10 +193,11 @@ export function resolveTaxonomies(
   taxaRefs: ReportingDescriptorReference[] = [],
   taxonomiesCatalog: ToolComponent[] = [],
   ruleRelationships: any[] = [],
-  tags: string[] = []
+  tags: string[] = [],
+  precomputedCatalogMap?: CatalogMap
 ): NormalizedTaxonomyReference[] {
   const resolvedMap = new Map<string, NormalizedTaxonomyReference>();
-  const catalogMap = buildTaxonomyCatalogMap(taxonomiesCatalog);
+  const catalogMap = precomputedCatalogMap || buildTaxonomyCatalogMap(taxonomiesCatalog);
 
   resolveTaxaReferences(taxaRefs, catalogMap, resolvedMap);
   resolveRuleRelationships(ruleRelationships, resolvedMap);

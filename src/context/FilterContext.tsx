@@ -46,16 +46,17 @@ function computeLevelOptions(report: ParsedSarifReport | null): LevelOption[] {
 
 export const FilterProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { report, rawSarif } = useReport();
-  const [prevReportKey, setPrevReportKey] = useState<string | undefined>(rawSarif?.filename);
   const [filters, setFilters] = useState<FilterState>(initialFilters);
   const [selectedFindingId, setSelectedFindingId] = useState<string | null>(null);
+  const prevSarifRef = React.useRef(rawSarif);
 
-  // Synchronize state during render when active report changes
-  if (rawSarif?.filename !== prevReportKey) {
-    setPrevReportKey(rawSarif?.filename);
-    setFilters(initialFilters);
-    setSelectedFindingId(null);
-  }
+  React.useEffect(() => {
+    if (prevSarifRef.current !== rawSarif) {
+      prevSarifRef.current = rawSarif;
+      setFilters(initialFilters);
+      setSelectedFindingId(null);
+    }
+  }, [rawSarif]);
 
   const updateFilters = useCallback((newFilters: Partial<FilterState>) => {
     setFilters((prev) => ({ ...prev, ...newFilters }));

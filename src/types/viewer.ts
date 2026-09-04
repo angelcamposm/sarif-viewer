@@ -1,4 +1,4 @@
-import { Result, ReportingDescriptor, Invocation, PropertyBag } from './sarif';
+import { Result, ReportingDescriptor, Invocation, PropertyBag, ToolComponent, Artifact, ArtifactLocation } from './sarif';
 
 export type SarifLevel = 'error' | 'warning' | 'note' | 'none';
 
@@ -59,6 +59,7 @@ export interface NormalizedArtifactChange {
 
 export interface NormalizedFix {
   description?: string;
+  descriptionMarkdown?: string;
   artifactChanges: NormalizedArtifactChange[];
 }
 
@@ -108,7 +109,8 @@ export interface NormalizedWebResponse {
 }
 
 export interface NormalizedFinding {
-  id: string; // unique deterministic hash / fingerprint
+  id: string; // unique deterministic hash / identifier
+  fingerprint?: string; // stable cross-scan fingerprint
   runIndex: number;
   resultIndex: number;
   toolName: string;
@@ -173,6 +175,11 @@ export interface SarifRunSummary {
   invocations?: Invocation[];
   metadata: ApplicationMetadata;
   properties?: PropertyBag;
+  driverRules?: ReportingDescriptor[];
+  extensions?: ToolComponent[];
+  taxonomies?: ToolComponent[];
+  artifacts?: Artifact[];
+  originalUriBaseIds?: Record<string, ArtifactLocation>;
 }
 
 export interface ParsedSarifReport {
@@ -201,3 +208,26 @@ export interface FilterState {
   selectedTag: string;   // 'all' | tag
   muteStatus: 'all' | 'active' | 'muted';
 }
+
+export type TableColumnKey =
+  | 'rule'
+  | 'ruleName'
+  | 'level'
+  | 'message'
+  | 'file'
+  | 'line'
+  | 'tool'
+  | 'tags'
+  | 'taxonomies'
+  | 'actions';
+
+export type ColumnVisibilityState = Record<TableColumnKey, boolean>;
+
+export interface ColumnMetadata {
+  key: TableColumnKey;
+  label: string;
+  description: string;
+  defaultVisible: boolean;
+  canHide: boolean;
+}
+
