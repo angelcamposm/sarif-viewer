@@ -23,7 +23,7 @@
     "@types/prismjs": "^1.26.6",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
-    "dompurify": "^3.4.14",
+    "dompurify": "^3.4.16",
     "lucide-react": "^1.34.0",
     "papaparse": "^5.7.0",
     "prismjs": "^1.30.0",
